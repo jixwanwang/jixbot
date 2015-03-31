@@ -1,0 +1,50 @@
+package command
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/jixwanwang/jixbot/channel"
+)
+
+type deleteCommandCommand struct {
+	baseCommand
+	cp *CommandPool
+}
+
+func (T deleteCommandCommand) ID() string {
+	return "delete"
+}
+
+func (T deleteCommandCommand) Response(username, message string) string {
+	remaining := strings.TrimPrefix(message, "!deletecommand ")
+	if remaining == message {
+		return ""
+	}
+
+	remaining = strings.TrimSpace(remaining)
+
+	if remaining[:1] != "!" {
+		return ""
+	}
+
+	existing := T.cp.hasTextCommand(remaining)
+
+	if existing < 0 {
+		return ""
+	}
+
+	T.cp.commands = append(T.cp.commands[:existing], T.cp.commands[existing+1:]...)
+
+	T.cp.FlushTextCommands()
+
+	return fmt.Sprintf("@%s Command %s deleted", username, remaining)
+}
+
+func (T deleteCommandCommand) GetClearance() channel.Level {
+	return T.baseCommand.clearance
+}
+
+func (T deleteCommandCommand) String() string {
+	return ""
+}
