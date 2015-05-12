@@ -8,9 +8,13 @@ import (
 )
 
 type textCommand struct {
-	baseCommand
-	command  string
-	response string
+	clearance channel.Level
+	command   string
+	response  string
+}
+
+func (T textCommand) Init() {
+
 }
 
 func (T textCommand) ID() string {
@@ -24,13 +28,9 @@ func (T textCommand) Response(username, message string) string {
 	return ""
 }
 
-func (B textCommand) GetClearance() channel.Level {
-	return B.baseCommand.clearance
-}
-
 func (B textCommand) String() string {
 	level := "viewer"
-	switch B.baseCommand.clearance {
+	switch B.clearance {
 	case channel.VIEWER:
 		level = "viewer"
 	default:

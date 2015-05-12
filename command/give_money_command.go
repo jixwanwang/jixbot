@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/jixwanwang/jixbot/channel"
 )
 
 type giveMoneyCommand struct {
-	baseCommand
-	channel      *channel.ViewerList
+	cp           *CommandPool
 	currencyName string
+}
+
+func (T giveMoneyCommand) Init() {
+
 }
 
 func (T giveMoneyCommand) ID() string {
@@ -36,24 +37,25 @@ func (T giveMoneyCommand) Response(username, message string) string {
 		return ""
 	}
 
-	to_viewer, ok := T.channel.InChannel(to_user)
+	to_viewer, ok := T.cp.channel.InChannel(to_user)
 	if !ok {
 		return fmt.Sprintf("@%s that user isn't in the chat.", username)
 	}
 
-	viewer, _ := T.channel.InChannel(username)
+	viewer, _ := T.cp.channel.InChannel(username)
 	if viewer.Money < amount {
-		return fmt.Sprintf("@%s you don't have enough %ss", username, T.currencyName)
+		return fmt.Sprintf("@%s you don't have enough %ss", username, T.cp.currencyName)
 	}
 
 	viewer.Money = viewer.Money - amount
 	to_viewer.Money = to_viewer.Money + amount
 
-	return fmt.Sprintf("@%s gave @%s %d %ss!", username, to_user, amount, T.currencyName)
-}
+	// if to_user == "jixbot" {
+	// 	total := T.channel.AddToLottery(username, amount)
+	// 	return fmt.Sprintf("@%s you have purchased %d lottery tickets! You have a total of %d.", username, amount, total)
+	// }
 
-func (T giveMoneyCommand) GetClearance() channel.Level {
-	return T.baseCommand.clearance
+	return fmt.Sprintf("@%s gave @%s %d %ss!", username, to_user, amount, T.cp.currencyName)
 }
 
 func (T giveMoneyCommand) String() string {

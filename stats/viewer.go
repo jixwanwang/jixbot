@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"os"
+	"strings"
 )
 
 const statsFilePath = "data/stats/"
@@ -13,64 +13,78 @@ const statsFilePath = "data/stats/"
 type Viewer struct {
 	Username   string `json:"username"`
 	LinesTyped int    `json:"lines_typed"`
-	KappaCount int    `json:"kappa_count"`
 	Money      int    `json:"money"`
+	BrawlsWon  int    `json:"brawls_won"`
 }
 
-func Init(channel string) {
+type ViewerManager struct {
+	channel string
+	viewers map[string]*Viewer
+}
+
+func Init(channel string) *ViewerManager {
 	// TODO: preload all the viewers whose data is already stored
-	os.MkdirAll(statsFilePath+channel, 0755)
+	// os.MkdirAll(statsFilePath+channel, 0755)
+
+	manager := ViewerManager{
+		channel: channel,
+		viewers: map[string]*Viewer{},
+	}
+
+	statsRaw, _ := ioutil.ReadFile(statsFilePath + channel + "_stats")
+	statLines := strings.Split(string(statsRaw), "\n")
+
+	for _, line := range statLines {
+		var viewer Viewer
+
+		err := json.Unmarshal([]byte(line), &viewer)
+
+		if err != nil {
+			continue
+		}
+
+		manager.viewers[viewer.Username] = &viewer
+	}
+
+	return &manager
 }
 
-func NewViewer(username, channel string) *Viewer {
-	statsRaw, _ := ioutil.ReadFile(statsFilePath + channel + "/" + username)
-
-	var v map[string]interface{}
-
-	viewer := &Viewer{Username: username}
-
-	err := json.Unmarshal(statsRaw, &v)
-	if err != nil {
-		// No stats available
-		return &Viewer{Username: username}
+func (V *ViewerManager) AllViewers() []*Viewer {
+	viewers := []*Viewer{}
+	for _, v := range V.viewers {
+		viewers = append(viewers, v)
 	}
+	return viewers
+}
 
-	if l, ok := v["lines_typed"]; ok {
-		value, ok := l.(float64)
-		if ok {
-			viewer.LinesTyped = int(value)
-		}
-	}
-	if l, ok := v["kappa_count"]; ok {
-		value, ok := l.(float64)
-		if ok {
-			viewer.KappaCount = int(value)
-		}
-	}
-	if l, ok := v["money"]; ok {
-		value, ok := l.(float64)
-		if ok {
-			viewer.Money = int(value)
-		}
-	}
+func (V *ViewerManager) FindViewer(username string) *Viewer {
+	viewer, ok := V.viewers[username]
 
-	log.Printf("read viewer %v", v)
+	if !ok {
+		V.viewers[username] = &Viewer{Username: username}
+		return V.viewers[username]
+	}
 
 	return viewer
 }
 
-func NewViewers(usernames []string, channel string) []*Viewer {
+func (V *ViewerManager) FindViewers(usernames []string) []*Viewer {
 	v := []*Viewer{}
 
 	for _, u := range usernames {
-		v = append(v, NewViewer(u, channel))
+		v = append(v, V.FindViewer(u))
 	}
 
 	return v
 }
 
-func SaveViewer(v *Viewer, channel string) {
-	data, _ := json.Marshal(v)
-	log.Printf("Saved %v for %s", string(data), channel)
-	ioutil.WriteFile(statsFilePath+channel+"/"+v.Username, data, 0666)
+func (V *ViewerManager) Flush() {
+	output := ""
+	for _, v := range V.viewers {
+		data, _ := json.Marshal(v)
+		log.Printf("Saved %v for %s", string(data), V.channel)
+		output = output + string(data) + "\n"
+	}
+
+	ioutil.WriteFile(statsFilePath+V.channel+"_stats", []byte(output), 0666)
 }

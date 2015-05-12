@@ -5,60 +5,44 @@ import (
 	"io/ioutil"
 
 	"github.com/jixwanwang/jixbot/channel"
+	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 )
 
 type CommandPool struct {
-	channel        *channel.ViewerList
+	channel      *channel.ViewerList
+	irc          *irc.Client
+	broadcaster  *channel.Broadcaster
+	texter       messaging.Texter
+	currencyName string
+
 	specials       []Command
-	commands       []textCommand
-	globalcommands []textCommand
+	commands       []*textCommand
+	globalcommands []*textCommand
 }
 
-func (C *CommandPool) specialCommands(texter messaging.Texter) []Command {
+func (C *CommandPool) specialCommands() []Command {
 	return []Command{
-		addCommandCommand{
-			baseCommand: baseCommand{
-				clearance: channel.MOD,
-			},
-			cp:   C,
-			key:  "!addcommand ",
-			perm: channel.VIEWER,
+		&addCommandCommand{
+			cp: C,
 		},
-		addCommandCommand{
-			baseCommand: baseCommand{
-				clearance: channel.MOD,
-			},
-			cp:   C,
-			key:  "!addmodcommand ",
-			perm: channel.MOD,
-		},
-		deleteCommandCommand{
-			baseCommand: baseCommand{
-				clearance: channel.MOD,
-			},
+		&deleteCommandCommand{
 			cp: C,
 		},
 		summonCommand{
-			baseCommand: baseCommand{
-				clearance: channel.VIEWER,
-			},
-			texter:  texter,
-			channel: C.channel,
+			cp: C,
 		},
 		moneyCommand{
-			baseCommand: baseCommand{
-				clearance: channel.VIEWER,
-			},
-			channel:      C.channel,
-			currencyName: "HotCoin",
+			cp: C,
 		},
 		giveMoneyCommand{
-			baseCommand: baseCommand{
-				clearance: channel.VIEWER,
-			},
-			channel:      C.channel,
-			currencyName: "HotCoin",
+			cp: C,
+		},
+		&brawlCommand{
+			cp: C,
+		},
+		&uptimeCommand{
+			cp: C,
 		},
 	}
 }
@@ -75,29 +59,22 @@ func (C *CommandPool) FlushTextCommands() {
 }
 
 func (C *CommandPool) GetResponse(username, message string) string {
-	clearance := C.channel.GetLevel(username)
 	for _, c := range C.specials {
-		if clearance >= c.GetClearance() {
-			res := c.Response(username, message)
-			if len(res) > 0 {
-				return res
-			}
+		res := c.Response(username, message)
+		if len(res) > 0 {
+			return res
 		}
 	}
 	for _, c := range C.globalcommands {
-		if clearance >= c.GetClearance() {
-			res := c.Response(username, message)
-			if len(res) > 0 {
-				return res
-			}
+		res := c.Response(username, message)
+		if len(res) > 0 {
+			return res
 		}
 	}
 	for _, c := range C.commands {
-		if clearance >= c.GetClearance() {
-			res := c.Response(username, message)
-			if len(res) > 0 {
-				return res
-			}
+		res := c.Response(username, message)
+		if len(res) > 0 {
+			return res
 		}
 	}
 

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
+	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 )
 
@@ -17,33 +19,38 @@ const (
 
 type Command interface {
 	ID() string
-	GetClearance() channel.Level
+	Init()
 	Response(username, message string) string
 	String() string
 }
 
-type baseCommand struct {
-	clearance channel.Level
-}
-
-func NewCommandPool(channel *channel.ViewerList, texter messaging.Texter) *CommandPool {
-	cp := &CommandPool{channel: channel}
+func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc *irc.Client, texter messaging.Texter) *CommandPool {
+	cp := &CommandPool{
+		channel:      channel,
+		broadcaster:  broadcaster,
+		irc:          irc,
+		texter:       texter,
+		currencyName: "HotCoin",
+	}
 
 	globals := loadTextCommands(globalChannel)
 	channels := loadTextCommands(channel.GetChannelName())
 
-	specials := cp.specialCommands(texter)
+	specials := cp.specialCommands()
 	filtered := filterCommands(channel.GetChannelName(), specials)
 
 	cp.specials = filtered
+	for _, c := range cp.specials {
+		c.Init()
+	}
 	cp.commands = channels
 	cp.globalcommands = globals
 
 	return cp
 }
 
-func loadTextCommands(channel string) []textCommand {
-	commands := []textCommand{}
+func loadTextCommands(channel string) []*textCommand {
+	commands := []*textCommand{}
 
 	commandsRaw, _ := ioutil.ReadFile(commandFilePath + channel)
 	commandList := strings.Split(string(commandsRaw), "\n")
@@ -53,7 +60,7 @@ func loadTextCommands(channel string) []textCommand {
 		if err != nil {
 			continue
 		}
-		commands = append(commands, comm)
+		commands = append(commands, &comm)
 	}
 	return commands
 }
@@ -74,11 +81,9 @@ func parseTextCommand(line string) (textCommand, error) {
 	}
 
 	return textCommand{
-		baseCommand: baseCommand{
-			clearance: perm,
-		},
-		command:  parts[0],
-		response: parts[2],
+		clearance: perm,
+		command:   parts[0],
+		response:  parts[2],
 	}, nil
 }
 
@@ -99,4 +104,49 @@ func filterCommands(channel string, commands []Command) []Command {
 	}
 
 	return newcommands
+}
+
+var BadCommandError = fmt.Errorf("Bad command")
+
+type subCommand struct {
+	command    string
+	numArgs    int
+	cooldown   time.Duration
+	lastCalled time.Time
+}
+
+func (C *subCommand) parse(message string) ([]string, error) {
+	args := []string{}
+
+	// Rate limit
+	if C.cooldown.Nanoseconds() > 0 && time.Since(C.lastCalled).Nanoseconds() < C.cooldown.Nanoseconds() {
+		return args, BadCommandError
+	}
+
+	parts := strings.Split(message, " ")
+	if parts[0] != C.command {
+		return args, BadCommandError
+	}
+
+	if len(parts)-1 < C.numArgs {
+		return args, BadCommandError
+	}
+
+	prefix := strings.Join(parts[:C.numArgs+1], " ")
+	// There will be a trailing space on the prefix if the message has more than enough parts
+	if C.numArgs < len(parts)-1 {
+		prefix = prefix + " "
+	}
+
+	if strings.HasPrefix(message, prefix) {
+		args = parts[1 : C.numArgs+1]
+		remaining := strings.TrimPrefix(message, prefix)
+		if len(remaining) > 0 {
+			args = append(args, strings.TrimPrefix(message, prefix))
+		}
+		C.lastCalled = time.Now()
+		return args, nil
+	}
+
+	return args, BadCommandError
 }
