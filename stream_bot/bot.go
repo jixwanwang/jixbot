@@ -39,14 +39,14 @@ func New(channelName, username, oath string, texter messaging.Texter) (*Bot, err
 		broadcaster: channel.NewBroadcaster(channelName),
 	}
 
-	bot.reload()
+	bot.startup()
 
 	ticker := time.NewTicker(1 * time.Minute)
 	go func() {
 		for {
 			<-ticker.C
 
-			if bot.broadcaster.Online() {
+			if bot.broadcaster.Online {
 				bot.viewerlist.Tick()
 			}
 		}
@@ -55,25 +55,20 @@ func New(channelName, username, oath string, texter messaging.Texter) (*Bot, err
 	return bot, nil
 }
 
-func (B *Bot) reload() {
+func (B *Bot) startup() {
 	B.viewerlist = channel.NewViewerList(B.channel)
-
+	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
 	B.reloadClient()
 	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter)
 }
 
 func (B *Bot) reloadClient() {
-	client, err := irc.New("irc.twitch.tv:6667", 10)
-	if err != nil {
-		log.Fatalf("Couldn't connect to client")
-	}
+	B.client.Reload()
 
-	client.Send(fmt.Sprintf("PASS %s", B.oath))
-	client.Send(fmt.Sprintf("NICK %s", B.username))
-	client.Send(fmt.Sprintf("JOIN #%s", B.channel))
-	client.Send("TWITCHCLIENT 2")
-
-	B.client = client
+	B.client.Send(fmt.Sprintf("PASS %s", B.oath))
+	B.client.Send(fmt.Sprintf("NICK %s", B.username))
+	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel))
+	B.client.Send("TWITCHCLIENT 2")
 }
 
 func (B *Bot) Start() {
@@ -89,6 +84,7 @@ func (B *Bot) Start() {
 				log.Printf("Error %s, reloading irc client", err.Error())
 				B.commands.FlushTextCommands()
 				B.reloadClient()
+				continue
 			}
 
 			switch e.Kind {
@@ -120,19 +116,20 @@ func (B *Bot) Start() {
 					} else if strings.HasPrefix(special, "EMOTESET") {
 
 					} else if strings.HasPrefix(special, "SPECIALUSER") {
-						parts := strings.Split(special, " ")
-						log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
+						// parts := strings.Split(special, " ")
+						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
 					} else {
-						log.Printf("jtv said: %s", special)
+						// log.Printf("jtv said: %s", special)
 					}
 				} else if username == "twitchnotify" {
 					log.Printf("TWITCHNOTIFY SAYS: %s", msg)
+					B.processMessage(username, msg)
 				} else {
 					B.processMessage(username, msg)
 					log.Printf("%s said: %s", username, msg)
 				}
 			default: //ignore
-				log.Printf("Unknown: %v", e)
+				// log.Printf("Unknown: %v", e)
 			}
 		}
 	}

@@ -12,10 +12,6 @@ import (
 	"github.com/jixwanwang/jixbot/stats"
 )
 
-const (
-	cooldown = 10
-)
-
 type brawlCommand struct {
 	cp        *CommandPool
 	brawlComm *subCommand
@@ -25,32 +21,27 @@ type brawlCommand struct {
 	brawlers     map[string]int
 	active       bool
 	currencyName string
-	lastBrawl    time.Time
 }
 
 func (T *brawlCommand) Init() {
 	T.brawlers = map[string]int{}
-	T.lastBrawl = time.Now().Add(-cooldown * time.Minute)
 
 	T.brawlComm = &subCommand{
-		command:    "!brawl",
-		numArgs:    0,
-		cooldown:   cooldown * time.Minute,
-		lastCalled: time.Now().Add(-cooldown * time.Minute),
+		command:  "!brawl",
+		numArgs:  0,
+		cooldown: 15 * time.Minute,
 	}
 
 	T.pileComm = &subCommand{
-		command:    "!pileon",
-		numArgs:    0,
-		cooldown:   0,
-		lastCalled: time.Now(),
+		command:  "!pileon",
+		numArgs:  0,
+		cooldown: 0,
 	}
 
 	T.statsComm = &subCommand{
-		command:    "!brawlstats",
-		numArgs:    0,
-		cooldown:   15 * time.Second,
-		lastCalled: time.Now(),
+		command:  "!brawlstats",
+		numArgs:  0,
+		cooldown: 15 * time.Second,
 	}
 }
 
@@ -77,8 +68,12 @@ func (T *brawlCommand) endBrawl() {
 	}
 
 	winner := users[rand.Intn(len(users))]
+	// 10% chance of broadcaster winning brawl if they join
+	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && rand.Intn(10) == 1 {
+		winner = T.cp.channel.GetChannelName()
+	}
 
-	message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing!", winner)
+	message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 100 %ss from the losers", winner, T.currencyName)
 
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
 
@@ -100,8 +95,6 @@ func (T *brawlCommand) startBrawl() {
 
 		T.endBrawl()
 	}()
-
-	T.lastBrawl = time.Now()
 
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("A brawl has started in Twitch Chat! Type !pileon to join the fight! Everyone, get in here!"))
 }
@@ -129,7 +122,7 @@ func (T *brawlCommand) Response(username, message string) string {
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.brawlComm.parse(message)
-	if err == nil && clearance >= channel.MOD && T.active == false && time.Since(T.lastBrawl).Minutes() > cooldown {
+	if err == nil && clearance >= channel.MOD && T.active == false {
 		T.startBrawl()
 		return ""
 	}

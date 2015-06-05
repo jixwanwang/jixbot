@@ -44,6 +44,12 @@ func (C *CommandPool) specialCommands() []Command {
 		&uptimeCommand{
 			cp: C,
 		},
+		&subMessage{
+			cp: C,
+		},
+		&fail{
+			cp: C,
+		},
 	}
 }
 

@@ -14,7 +14,6 @@ type uptimeCommand struct {
 }
 
 func (T *uptimeCommand) Init() {
-	T.cp.broadcaster.Online()
 	T.upComm = &subCommand{
 		command:    "!uptime",
 		numArgs:    0,
@@ -32,8 +31,7 @@ func (T *uptimeCommand) Response(username, message string) string {
 
 	_, err := T.upComm.parse(message)
 	if err == nil {
-		online := T.cp.broadcaster.Online()
-		if !online {
+		if !T.cp.broadcaster.Online {
 			return fmt.Sprintf("%s isn't online.", T.cp.channel.GetChannelName())
 		}
 		uptime := time.Now().UTC().Sub(T.cp.broadcaster.OnlineSince)

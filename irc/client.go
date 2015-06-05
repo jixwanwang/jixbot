@@ -15,6 +15,7 @@ type Client struct {
 	sentMessages []message
 	// Max messages per 15 seconds
 	messageRate int
+	server      string
 }
 
 type message struct {
@@ -29,17 +30,23 @@ type Event struct {
 }
 
 func New(server string, messageRate int) (*Client, error) {
-	conn, err := net.Dial("tcp", server)
-	if err != nil {
-		return nil, err
-	}
-	br := bufio.NewReaderSize(conn, 512)
-
-	return &Client{
-		socket:      conn,
-		br:          br,
+	client := &Client{
 		messageRate: messageRate,
-	}, nil
+		server:      server,
+	}
+
+	client.Reload()
+
+	return client, nil
+}
+
+func (C *Client) Reload() error {
+	conn, err := net.Dial("tcp", C.server)
+	br := bufio.NewReaderSize(conn, 512)
+	C.br = br
+	C.socket = conn
+
+	return err
 }
 
 func (C *Client) Send(msg string) {
@@ -48,7 +55,6 @@ func (C *Client) Send(msg string) {
 }
 
 func (C *Client) Say(channel, msg string) {
-	// TODO: rate limit
 	// Prune message list
 	i := 0
 	for i = range C.sentMessages {
@@ -61,7 +67,7 @@ func (C *Client) Say(channel, msg string) {
 	} else {
 		C.sentMessages = C.sentMessages[i:]
 	}
-	log.Printf("")
+
 	if len(C.sentMessages) < C.messageRate {
 		C.Send(fmt.Sprintf("PRIVMSG %s :%s", channel, msg))
 		C.sentMessages = append(C.sentMessages, message{
