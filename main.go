@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/stream_bot"
 )
@@ -22,13 +23,23 @@ func main() {
 	twilioSecret := os.Getenv("TWILIO_SECRET")
 	twilioNumber := os.Getenv("TWILIO_NUMBER")
 	myNumber := os.Getenv("JIX_NUMBER")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	dbname := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+
 	channels := strings.Split(os.Getenv("CHANNELS"), ",")
+
+	db, err := db.New(host, port, dbname, user)
+	if err != nil {
+		log.Fatalf("Failed to create db: %s", err.Error())
+	}
 
 	texter := messaging.NewTexter(twilioAccount, twilioSecret, twilioNumber, myNumber)
 
 	bots := []*stream_bot.Bot{}
 	for _, channel := range channels {
-		b, err := stream_bot.New(channel, nickname, oath, texter)
+		b, err := stream_bot.New(channel, nickname, oath, texter, db)
 
 		if err != nil {
 			log.Fatalf("Failed to create client for %s: %s", channel, err.Error())

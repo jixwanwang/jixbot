@@ -1,6 +1,7 @@
 package stream_bot
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -25,11 +26,12 @@ type Bot struct {
 	commands    *command.CommandPool
 	viewerlist  *channel.ViewerList
 	broadcaster *channel.Broadcaster
+	db          *sql.DB
 
 	shutdown chan int
 }
 
-func New(channelName, username, oath string, texter messaging.Texter) (*Bot, error) {
+func New(channelName, username, oath string, texter messaging.Texter, db *sql.DB) (*Bot, error) {
 	bot := &Bot{
 		channel:     channelName,
 		username:    username,
@@ -37,6 +39,7 @@ func New(channelName, username, oath string, texter messaging.Texter) (*Bot, err
 		texter:      texter,
 		shutdown:    make(chan int),
 		broadcaster: channel.NewBroadcaster(channelName),
+		db:          db,
 	}
 
 	bot.startup()
@@ -56,14 +59,17 @@ func New(channelName, username, oath string, texter messaging.Texter) (*Bot, err
 }
 
 func (B *Bot) startup() {
-	B.viewerlist = channel.NewViewerList(B.channel)
+	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
 	B.reloadClient()
-	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter)
+	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter, B.db)
 }
 
 func (B *Bot) reloadClient() {
-	B.client.Reload()
+	err := B.client.Reload()
+	if err != nil {
+		log.Printf("%s", err.Error())
+	}
 
 	B.client.Send(fmt.Sprintf("PASS %s", B.oath))
 	B.client.Send(fmt.Sprintf("NICK %s", B.username))

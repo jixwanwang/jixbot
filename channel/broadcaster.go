@@ -26,11 +26,13 @@ func NewBroadcaster(channel string) *Broadcaster {
 		Username:  channel,
 		tolerance: 1 * time.Minute,
 	}
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	go func() {
-		<-ticker.C
-		b.checkOnline()
-		log.Printf("%v %v", b.Online, b.OnlineSince)
+		for {
+			<-ticker.C
+			b.checkOnline()
+			log.Printf("%s %v %v", b.Username, b.Online, b.OnlineSince)
+		}
 	}()
 	b.checkOnline()
 

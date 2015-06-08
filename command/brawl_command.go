@@ -4,32 +4,45 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
-	"github.com/jixwanwang/jixbot/stats"
 )
 
 type brawlCommand struct {
-	cp        *CommandPool
-	brawlComm *subCommand
-	pileComm  *subCommand
-	statsComm *subCommand
+	cp            *CommandPool
+	brawlComm     *subCommand
+	newSeasonComm *subCommand
+	pileComm      *subCommand
+	statsComm     *subCommand
+	statComm      *subCommand
 
-	brawlers     map[string]int
-	active       bool
-	currencyName string
+	season   int
+	brawlers map[string]int
+	active   bool
 }
 
 func (T *brawlCommand) Init() {
+	row := T.cp.db.QueryRow("select * from (select distinct(season) from brawlwins order by season desc) as seasons limit 1")
+	if err := row.Scan(&T.season); err != nil {
+		log.Printf("couldn't determine the brawl season, assuming to be 1")
+		T.season = 1
+	}
+	log.Printf("The current brawl season is %d", T.season)
+
 	T.brawlers = map[string]int{}
 
 	T.brawlComm = &subCommand{
 		command:  "!brawl",
 		numArgs:  0,
 		cooldown: 15 * time.Minute,
+	}
+
+	T.newSeasonComm = &subCommand{
+		command:  "!newbrawlseason",
+		numArgs:  0,
+		cooldown: 12 * time.Second,
 	}
 
 	T.pileComm = &subCommand{
@@ -42,6 +55,12 @@ func (T *brawlCommand) Init() {
 		command:  "!brawlstats",
 		numArgs:  0,
 		cooldown: 15 * time.Second,
+	}
+
+	T.statComm = &subCommand{
+		command:  "!brawlwins",
+		numArgs:  0,
+		cooldown: 5 * time.Second,
 	}
 }
 
@@ -73,14 +92,13 @@ func (T *brawlCommand) endBrawl() {
 		winner = T.cp.channel.GetChannelName()
 	}
 
-	message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 100 %ss from the losers", winner, T.currencyName)
+	message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 100 %ss from the losers.", winner, T.cp.channel.Currency)
 
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
 
 	winningUser, in := T.cp.channel.InChannel(winner)
 	if in {
-		winningUser.BrawlsWon = winningUser.BrawlsWon + 1
-		winningUser.Money = winningUser.Money + 100
+		winningUser.WinBrawl(T.season)
 	}
 }
 
@@ -99,23 +117,23 @@ func (T *brawlCommand) startBrawl() {
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("A brawl has started in Twitch Chat! Type !pileon to join the fight! Everyone, get in here!"))
 }
 
-type viewerBrawlerInterface struct {
-	viewers []*stats.Viewer
-}
+// type viewerBrawlerInterface struct {
+// 	viewers []*stats.Viewer
+// }
 
-func (V *viewerBrawlerInterface) Len() int {
-	return len(V.viewers)
-}
+// func (V *viewerBrawlerInterface) Len() int {
+// 	return len(V.viewers)
+// }
 
-func (V *viewerBrawlerInterface) Less(i, j int) bool {
-	return V.viewers[i].BrawlsWon > V.viewers[j].BrawlsWon
-}
+// func (V *viewerBrawlerInterface) Less(i, j int) bool {
+// 	return V.viewers[i].BrawlsWon > V.viewers[j].BrawlsWon
+// }
 
-func (V *viewerBrawlerInterface) Swap(i, j int) {
-	oldi := V.viewers[i]
-	V.viewers[i] = V.viewers[j]
-	V.viewers[j] = oldi
-}
+// func (V *viewerBrawlerInterface) Swap(i, j int) {
+// 	oldi := V.viewers[i]
+// 	V.viewers[i] = V.viewers[j]
+// 	V.viewers[j] = oldi
+// }
 
 func (T *brawlCommand) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
@@ -125,6 +143,13 @@ func (T *brawlCommand) Response(username, message string) string {
 	if err == nil && clearance >= channel.MOD && T.active == false {
 		T.startBrawl()
 		return ""
+	}
+
+	_, err = T.newSeasonComm.parse(message)
+	if err == nil && clearance >= channel.BROADCASTER && T.active == false {
+		T.season = T.season + 1
+		// TODO: add top winners of the season
+		return fmt.Sprintf("The brawl season has ended! We are now in season %d", T.season)
 	}
 
 	_, err = T.pileComm.parse(message)
@@ -138,39 +163,52 @@ func (T *brawlCommand) Response(username, message string) string {
 		return ""
 	}
 
-	_, err = T.statsComm.parse(message)
+	_, err = T.statComm.parse(message)
 	if err == nil {
-		sorter := &viewerBrawlerInterface{T.cp.channel.AllViewers()}
-		sort.Sort(sorter)
-		winners := []*stats.Viewer{}
-		tiedWinners := []*stats.Viewer{}
-		numWins := 10000
-		count := -1
-		output := "All-time best brawlers: "
-		for _, w := range sorter.viewers {
-			if w.BrawlsWon < numWins {
-				if len(tiedWinners) != 0 {
-					for _, winner := range tiedWinners {
-						output = fmt.Sprintf("%s%s & ", output, winner.Username)
-					}
-					output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
-				}
-
-				winners = append(winners, tiedWinners...)
-				tiedWinners = []*stats.Viewer{}
-				numWins = w.BrawlsWon
-				count = count + 1
+		user, in := T.cp.channel.InChannel(username)
+		if in {
+			brawlsWon := user.GetBrawlsWon()
+			wins, ok := brawlsWon[T.season]
+			if !ok {
+				wins = 0
 			}
-			if w.BrawlsWon == numWins {
-				tiedWinners = append(tiedWinners, w)
-			}
-			if numWins == 0 || count > 3 {
-				break
-			}
+			return fmt.Sprintf("@%s you have won %d brawls this season", username, wins)
 		}
-
-		return output[:len(output)-2]
 	}
+
+	// _, err = T.statsComm.parse(message)
+	// if err == nil {
+	// 	sorter := &viewerBrawlerInterface{T.cp.channel.AllViewers()}
+	// 	sort.Sort(sorter)
+	// 	winners := []*stats.Viewer{}
+	// 	tiedWinners := []*stats.Viewer{}
+	// 	numWins := 10000
+	// 	count := -1
+	// 	output := "All-time best brawlers: "
+	// 	for _, w := range sorter.viewers {
+	// 		if w.BrawlsWon < numWins {
+	// 			if len(tiedWinners) != 0 {
+	// 				for _, winner := range tiedWinners {
+	// 					output = fmt.Sprintf("%s%s & ", output, winner.Username)
+	// 				}
+	// 				output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
+	// 			}
+
+	// 			winners = append(winners, tiedWinners...)
+	// 			tiedWinners = []*stats.Viewer{}
+	// 			numWins = w.BrawlsWon
+	// 			count = count + 1
+	// 		}
+	// 		if w.BrawlsWon == numWins {
+	// 			tiedWinners = append(tiedWinners, w)
+	// 		}
+	// 		if numWins == 0 || count > 3 {
+	// 			break
+	// 		}
+	// 	}
+
+	// 	return output[:len(output)-2]
+	// }
 
 	return ""
 }

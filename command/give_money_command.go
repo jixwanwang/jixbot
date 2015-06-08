@@ -43,19 +43,19 @@ func (T giveMoneyCommand) Response(username, message string) string {
 	}
 
 	viewer, _ := T.cp.channel.InChannel(username)
-	if viewer.Money < amount {
-		return fmt.Sprintf("@%s you don't have enough %ss", username, T.cp.currencyName)
+	if viewer.GetMoney() < amount {
+		return fmt.Sprintf("@%s you don't have enough %ss", username, T.cp.channel.Currency)
 	}
 
-	viewer.Money = viewer.Money - amount
-	to_viewer.Money = to_viewer.Money + amount
+	viewer.AddMoney(-amount)
+	to_viewer.AddMoney(amount)
 
 	// if to_user == "jixbot" {
 	// 	total := T.channel.AddToLottery(username, amount)
 	// 	return fmt.Sprintf("@%s you have purchased %d lottery tickets! You have a total of %d.", username, amount, total)
 	// }
 
-	return fmt.Sprintf("@%s gave @%s %d %ss!", username, to_user, amount, T.cp.currencyName)
+	return fmt.Sprintf("@%s gave @%s %d %ss!", username, to_user, amount, T.cp.channel.Currency)
 }
 
 func (T giveMoneyCommand) String() string {

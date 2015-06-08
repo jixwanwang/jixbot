@@ -1,8 +1,9 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"strings"
 	"time"
 
@@ -24,20 +25,20 @@ type Command interface {
 	String() string
 }
 
-func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc *irc.Client, texter messaging.Texter) *CommandPool {
+func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
 	cp := &CommandPool{
-		channel:      channel,
-		broadcaster:  broadcaster,
-		irc:          irc,
-		texter:       texter,
-		currencyName: "HotCoin",
+		channel:     channel,
+		broadcaster: broadcaster,
+		irc:         irc,
+		db:          db,
+		texter:      texter,
 	}
 
-	globals := loadTextCommands(globalChannel)
-	channels := loadTextCommands(channel.GetChannelName())
+	globals := loadTextCommands(db, globalChannel)
+	channels := loadTextCommands(db, channel.GetChannelName())
 
 	specials := cp.specialCommands()
-	filtered := filterCommands(channel.GetChannelName(), specials)
+	filtered := filterCommands(db, channel.GetChannelName(), specials)
 
 	cp.specials = filtered
 	for _, c := range cp.specials {
@@ -49,52 +50,43 @@ func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaste
 	return cp
 }
 
-func loadTextCommands(channel string) []*textCommand {
+func loadTextCommands(db *sql.DB, channelName string) []*textCommand {
 	commands := []*textCommand{}
 
-	commandsRaw, _ := ioutil.ReadFile(commandFilePath + channel)
-	commandList := strings.Split(string(commandsRaw), "\n")
-
-	for _, c := range commandList {
-		comm, err := parseTextCommand(c)
-		if err != nil {
-			continue
-		}
-		commands = append(commands, &comm)
+	rows, err := db.Query("SELECT command, message, clearance FROM textcommands WHERE channel=$1", channelName)
+	if err != nil {
+		log.Printf("Couldn't read text commands")
 	}
+	for rows.Next() {
+		var comm, message string
+		var clearance int
+		rows.Scan(&comm, &message, &clearance)
+
+		commands = append(commands, &textCommand{
+			clearance: channel.Level(clearance),
+			command:   comm,
+			response:  message,
+		})
+	}
+	rows.Close()
+
 	return commands
 }
 
-func parseTextCommand(line string) (textCommand, error) {
-	parts := strings.Split(line, ",")
-
-	if len(parts) < 3 {
-		return textCommand{}, fmt.Errorf("Not a valid command")
-	}
-
-	var perm channel.Level
-	switch parts[1] {
-	case "viewer":
-		perm = channel.VIEWER
-	case "mod":
-		perm = channel.MOD
-	}
-
-	return textCommand{
-		clearance: perm,
-		command:   parts[0],
-		response:  parts[2],
-	}, nil
-}
-
-func filterCommands(channel string, commands []Command) []Command {
+func filterCommands(db *sql.DB, channelName string, commands []Command) []Command {
 	newcommands := []Command{}
 
-	configRaw, _ := ioutil.ReadFile(configFilePath + channel)
+	rows, err := db.Query("SELECT command FROM commands WHERE channel=$1", channelName)
+	if err != nil {
+		log.Printf("Couldn't read commands")
+	}
 
 	ids := map[string]int{}
-	for _, id := range strings.Split(string(configRaw), "\n") {
-		ids[id] = 1
+	for rows.Next() {
+		var comm string
+		if err := rows.Scan(&comm); err == nil {
+			ids[comm] = 1
+		}
 	}
 
 	for _, c := range commands {

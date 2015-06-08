@@ -1,6 +1,7 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 
@@ -10,11 +11,11 @@ import (
 )
 
 type CommandPool struct {
-	channel      *channel.ViewerList
-	irc          *irc.Client
-	broadcaster  *channel.Broadcaster
-	texter       messaging.Texter
-	currencyName string
+	channel     *channel.ViewerList
+	irc         *irc.Client
+	broadcaster *channel.Broadcaster
+	texter      messaging.Texter
+	db          *sql.DB
 
 	specials       []Command
 	commands       []*textCommand

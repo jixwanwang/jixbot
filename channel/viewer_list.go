@@ -1,6 +1,11 @@
 package channel
 
-import "github.com/jixwanwang/jixbot/stats"
+import (
+	"database/sql"
+	"log"
+
+	"github.com/jixwanwang/jixbot/stats"
+)
 
 type Level int
 
@@ -23,19 +28,52 @@ type ViewerList struct {
 	staff               map[string]int
 	mods                map[string]int
 	lotteryContributers map[string]int
+
+	// Other properties
+	Currency string
+	Emotes   []string
 }
 
-func NewViewerList(channel string) *ViewerList {
-	stats.Init(channel)
-
-	return &ViewerList{
+func NewViewerList(channel string, db *sql.DB) *ViewerList {
+	viewers := &ViewerList{
 		channel:             channel,
-		db:                  stats.Init(channel),
+		db:                  stats.Init(channel, db),
 		viewers:             map[string]*stats.Viewer{},
 		staff:               map[string]int{},
 		mods:                map[string]int{},
 		lotteryContributers: map[string]int{},
 	}
+
+	rows, err := db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
+	if err != nil {
+		log.Printf("couldn't get channel_properties %s", err.Error())
+	}
+	for rows.Next() {
+		var k, v string
+		rows.Scan(&k, &v)
+		if k == "currency" {
+			viewers.Currency = v
+		}
+	}
+	rows.Close()
+
+	emotes := []string{}
+	rows, err = db.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
+	if err != nil {
+		log.Printf("couldn't get emotes %s", err.Error())
+	}
+	for rows.Next() {
+		var emote string
+		err := rows.Scan(&emote)
+		if err != nil {
+			emotes = append(emotes, emote)
+		}
+	}
+	rows.Close()
+
+	viewers.Emotes = emotes
+
+	return viewers
 }
 
 func (V *ViewerList) GetChannelName() string {
@@ -99,13 +137,13 @@ func (V *ViewerList) RecordMessage(username, msg string) {
 		v = V.viewers[username]
 	}
 
-	v.LinesTyped = v.LinesTyped + 1
-	v.Money = v.Money + 1
+	v.AddLineTyped()
 }
 
 func (V *ViewerList) Tick() {
+	// TODO: make money work
 	for _, v := range V.viewers {
-		v.Money = v.Money + 1
+		v.AddMoney(1)
 	}
 	V.db.Flush()
 }
@@ -113,42 +151,3 @@ func (V *ViewerList) Tick() {
 func (V *ViewerList) Close() {
 	V.db.Flush()
 }
-
-// func (V *ViewerList) AddToLottery(username string, amount int) int {
-// 	value, ok := V.lotteryContributers[username]
-// 	if ok {
-// 		V.lotteryContributers[username] = value + amount
-// 		return value + amount
-// 	}
-
-// 	V.lotteryContributers[username] = amount
-// 	return amount
-// }
-
-// func (V *ViewerList) LotteryReady() string {
-// 	if len(V.lotteryContributers) < 10 {
-// 		return "Not enough people bought tickets to run a lottery."
-// 	}
-// 	return ""
-// }
-
-// func (V *ViewerList) RunLottery() (string, int) {
-// 	tickets := []string{}
-// 	for username, v := range V.lotteryContributers {
-// 		for i := 0; i < v; i++ {
-// 			tickets = append(tickets, username)
-// 		}
-// 	}
-
-// 	log.Printf("%v", tickets)
-
-// 	winner := tickets[rand.Intn(len(tickets))]
-// 	winningViewer := V.db.FindViewer(winner)
-// 	winningAmount := V.viewers["jixbot"].Money / 2
-// 	winningViewer.Money = winningViewer.Money + winningAmount
-// 	V.viewers["jixbot"].Money = V.viewers["jixbot"].Money - winningAmount
-
-// 	V.lotteryContributers = map[string]int{}
-
-// 	return winner, winningAmount
-// }

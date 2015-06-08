@@ -1,90 +1,137 @@
 package stats
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
-	"strings"
-)
-
-const statsFilePath = "data/stats/"
+import "log"
 
 // Represents a viewer in a single stream.
 type Viewer struct {
-	Username   string `json:"username"`
-	LinesTyped int    `json:"lines_typed"`
-	Money      int    `json:"money"`
-	BrawlsWon  int    `json:"brawls_won"`
+	id         int
+	updated    bool
+	manager    *ViewerManager
+	Username   string      `json:"username"`
+	linesTyped int         `json:"lines_typed"`
+	money      int         `json:"money"`
+	brawlsWon  map[int]int `json:"brawls_won"`
 }
 
-type ViewerManager struct {
-	channel string
-	viewers map[string]*Viewer
-}
-
-func Init(channel string) *ViewerManager {
-	// TODO: preload all the viewers whose data is already stored
-	// os.MkdirAll(statsFilePath+channel, 0755)
-
-	manager := ViewerManager{
-		channel: channel,
-		viewers: map[string]*Viewer{},
+func (V *Viewer) GetBrawlsWon() map[int]int {
+	if V.brawlsWon == nil {
+		brawlsWon := V.lookupBrawlWins()
+		V.brawlsWon = brawlsWon
 	}
+	return V.brawlsWon
+}
 
-	statsRaw, _ := ioutil.ReadFile(statsFilePath + channel + "_stats")
-	statLines := strings.Split(string(statsRaw), "\n")
-
-	for _, line := range statLines {
-		var viewer Viewer
-
-		err := json.Unmarshal([]byte(line), &viewer)
-
-		if err != nil {
-			continue
+func (V *Viewer) lookupBrawlWins() map[int]int {
+	wins := map[int]int{}
+	if V.id < 0 {
+		return wins
+	}
+	log.Printf("SELECT season, wins FROM brawlwins WHERE viewer_id=%d", V.id)
+	rows, err := V.manager.db.Query("SELECT season, wins FROM brawlwins WHERE viewer_id=$1", V.id)
+	if err != nil {
+		log.Printf("couldn't find brawlwins for viewer with id %d", V.id)
+		return wins
+	}
+	for rows.Next() {
+		var season, numWins int
+		if err := rows.Scan(&season, &numWins); err != nil {
+			log.Printf("coudln't scan: %s", err.Error())
 		}
-
-		manager.viewers[viewer.Username] = &viewer
+		wins[season] = numWins
 	}
-
-	return &manager
+	rows.Close()
+	return wins
 }
 
-func (V *ViewerManager) AllViewers() []*Viewer {
-	viewers := []*Viewer{}
-	for _, v := range V.viewers {
-		viewers = append(viewers, v)
+func (V *Viewer) WinBrawl(season int) {
+	V.GetBrawlsWon()
+
+	if _, ok := V.brawlsWon[season]; ok {
+		V.brawlsWon[season] = V.brawlsWon[season] + 1
+	} else {
+		V.brawlsWon[season] = 1
 	}
-	return viewers
+	V.AddMoney(100)
+
+	V.updated = true
 }
 
-func (V *ViewerManager) FindViewer(username string) *Viewer {
-	viewer, ok := V.viewers[username]
+func (V *Viewer) GetLinesTyped() int {
+	if V.linesTyped < 0 {
+		if V.id > 0 {
+			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='lines_typed' AND viewer_id=$1", V.id)
 
-	if !ok {
-		V.viewers[username] = &Viewer{Username: username}
-		return V.viewers[username]
+			if err := row.Scan(&V.linesTyped); err != nil {
+				log.Printf("couldn't find lines typed for viewer with id %d", V.id)
+				V.linesTyped = 0
+			}
+		} else {
+			V.linesTyped = 0
+		}
 	}
-
-	return viewer
+	return V.linesTyped
 }
 
-func (V *ViewerManager) FindViewers(usernames []string) []*Viewer {
-	v := []*Viewer{}
-
-	for _, u := range usernames {
-		v = append(v, V.FindViewer(u))
-	}
-
-	return v
+func (V *Viewer) AddLineTyped() {
+	V.linesTyped = V.GetLinesTyped() + 1
+	V.updated = true
 }
 
-func (V *ViewerManager) Flush() {
-	output := ""
-	for _, v := range V.viewers {
-		data, _ := json.Marshal(v)
-		log.Printf("Saved %v for %s", string(data), V.channel)
-		output = output + string(data) + "\n"
-	}
+func (V *Viewer) GetMoney() int {
+	if V.money < 0 {
+		if V.id > 0 {
+			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='money' AND viewer_id=$1", V.id)
 
-	ioutil.WriteFile(statsFilePath+V.channel+"_stats", []byte(output), 0666)
+			if err := row.Scan(&V.money); err != nil {
+				log.Printf("couldn't find money for viewer with id %d", V.id)
+				V.money = 0
+			}
+		} else {
+			V.money = 0
+		}
+	}
+	return V.money
+}
+
+func (V *Viewer) AddMoney(amount int) {
+	V.money = V.GetMoney() + amount
+	if V.money < 0 {
+		V.money = 0
+	}
+	V.updated = true
+}
+
+func (V *Viewer) save() {
+	if V.id == -1 {
+		// Write new user to db
+		V.manager.db.Exec("INSERT INTO viewers (username, channel) VALUES ($1, $2)", V.Username, V.manager.channel)
+		row := V.manager.db.QueryRow("SELECT id FROM viewers WHERE username=$1 AND channel=$2", V.Username, V.manager.channel)
+		var id int
+		if err := row.Scan(&id); err != nil {
+			log.Printf("failed to get id of new user: %s", err.Error())
+		}
+		V.id = id
+		log.Printf("created new viewer with id %d, username %s", V.id, V.Username)
+	}
+	// TODO: write brawls, money, lines typed to db
+	if V.brawlsWon != nil {
+		for season, wins := range V.brawlsWon {
+			insert := "INSERT INTO brawlwins (season, viewer_id, wins) SELECT $1, $2, $3"
+			upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2"
+			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins)
+		}
+	}
+	if V.money > 0 {
+		insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'money', $1, $2"
+		upsert := "UPDATE counts SET count=$2 WHERE type='money' AND viewer_id=$1"
+		V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.id, V.money)
+	}
+	if V.linesTyped > 0 {
+		insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'lines_typed', $1, $2"
+		upsert := "UPDATE counts SET count=$2 WHERE type='lines_typed' AND viewer_id=$1"
+		query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
+		V.manager.db.Exec(query, V.id, V.linesTyped)
+	}
+	V.updated = false
+	log.Printf("saved user %s", V.Username)
 }

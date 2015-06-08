@@ -46,7 +46,7 @@ func (T slotsCommand) Response(username, message string) string {
 			}
 		}
 
-		if user.Money < cost {
+		if user.GetMoney() < cost {
 			return fmt.Sprintf("@%s You don't have enough money.", username)
 		}
 
@@ -67,11 +67,11 @@ func (T slotsCommand) Response(username, message string) string {
 			winnings = cost * 2
 		}
 
-		user.Money = user.Money - cost + winnings
+		user.AddMoney(winnings - cost)
 		if winnings > cost {
-			return fmt.Sprintf("@%s You won %d %ss", username, winnings-cost, T.cp.currencyName)
+			return fmt.Sprintf("@%s You won %d %ss", username, winnings-cost, T.cp.channel.Currency)
 		} else {
-			return fmt.Sprintf("@%s You lost %d %ss", username, cost-winnings, T.cp.currencyName)
+			return fmt.Sprintf("@%s You lost %d %ss", username, cost-winnings, T.cp.channel.Currency)
 		}
 	}
 
