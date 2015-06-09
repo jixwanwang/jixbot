@@ -8,6 +8,7 @@ import (
 )
 
 type textCommand struct {
+	cp        *CommandPool
 	clearance channel.Level
 	command   string
 	response  string

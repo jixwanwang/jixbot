@@ -30,6 +30,7 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 		db:      db,
 	}
 
+	log.Printf("Loading viewers from database...")
 	rows, err := db.Query("SELECT id, username FROM viewers WHERE channel=$1", channel)
 	if err != nil {
 		log.Printf("couldn't read viewers")
@@ -38,7 +39,6 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 		var id int
 		var username string
 		rows.Scan(&id, &username)
-		// log.Printf("%v %v %v", id, username, channel)
 		manager.viewers[username] = &Viewer{
 			id:         id,
 			updated:    false,
@@ -50,6 +50,13 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 		}
 	}
 	rows.Close()
+	log.Printf("Done loading viewers")
+
+	log.Printf("Retrieving brawl stats...")
+	for _, v := range manager.viewers {
+		v.GetBrawlsWon()
+	}
+	log.Printf("Done retrieving brawl stats")
 
 	return &manager
 }

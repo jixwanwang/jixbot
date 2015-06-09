@@ -11,9 +11,15 @@ import (
 // TODO: write stuff that resembles a database interface here.
 // For when you finally use a database instead of text files, you lazy poop.
 
-func New(host, port, name, user string) (*sql.DB, error) {
-	pgConnect := fmt.Sprintf("dbname=%s user=%s host=%s port=%s sslmode=disable",
+func New(host, port, name, user, password string) (*sql.DB, error) {
+	pgConnect := fmt.Sprintf("dbname=%s user=%s host=%s port=%s",
 		name, user, host, port)
+	if password != "" {
+		pgConnect = fmt.Sprintf("%s password=%s", pgConnect, password)
+	} else {
+		pgConnect = pgConnect + " sslmode=disable"
+	}
+
 	db, err := sql.Open("postgres", pgConnect)
 
 	if err != nil {

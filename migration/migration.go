@@ -28,8 +28,9 @@ func main() {
 	port := os.Getenv("DB_PORT")
 	dbname := os.Getenv("DB_NAME")
 	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASS")
 
-	db, err := db.New(host, port, dbname, user)
+	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
 		log.Printf("couldn't connect to db %s", err.Error())
 	}
@@ -63,7 +64,10 @@ func main() {
 				db.Exec("INSERT INTO counts (type, viewer_id, count) VALUES ($1, $2, $3)", "money", id, old.Money)
 			}
 		}
+	}
 
+	channels = append(channels, "_global")
+	for _, channel := range channels {
 		// Migrate text commands
 		textCommandsRaw, _ := ioutil.ReadFile(textFilePath + channel)
 		lines := strings.Split(string(textCommandsRaw), "\n")
@@ -84,5 +88,4 @@ func main() {
 			db.Exec("INSERT INTO textcommands (channel, command, message, clearance) VALUES ($1, $2, $3, $4)", channel, parts[0], parts[2], perm)
 		}
 	}
-
 }

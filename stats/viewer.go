@@ -21,12 +21,20 @@ func (V *Viewer) GetBrawlsWon() map[int]int {
 	return V.brawlsWon
 }
 
+func (V *Viewer) GetTotalBrawlsWon() int {
+	total := 0
+	for _, wins := range V.GetBrawlsWon() {
+		total = total + wins
+	}
+	return total
+}
+
 func (V *Viewer) lookupBrawlWins() map[int]int {
 	wins := map[int]int{}
 	if V.id < 0 {
 		return wins
 	}
-	log.Printf("SELECT season, wins FROM brawlwins WHERE viewer_id=%d", V.id)
+
 	rows, err := V.manager.db.Query("SELECT season, wins FROM brawlwins WHERE viewer_id=$1", V.id)
 	if err != nil {
 		log.Printf("couldn't find brawlwins for viewer with id %d", V.id)

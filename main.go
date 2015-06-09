@@ -27,10 +27,11 @@ func main() {
 	port := os.Getenv("DB_PORT")
 	dbname := os.Getenv("DB_NAME")
 	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASS")
 
 	channels := strings.Split(os.Getenv("CHANNELS"), ",")
 
-	db, err := db.New(host, port, dbname, user)
+	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
 		log.Fatalf("Failed to create db: %s", err.Error())
 	}

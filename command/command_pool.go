@@ -2,8 +2,6 @@ package command
 
 import (
 	"database/sql"
-	"fmt"
-	"io/ioutil"
 
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/irc"
@@ -54,17 +52,6 @@ func (C *CommandPool) specialCommands() []Command {
 	}
 }
 
-func (C *CommandPool) FlushTextCommands() {
-	data := ""
-
-	for _, c := range C.commands {
-		if c.ID() == "text" {
-			data = fmt.Sprintf("%s%v\n", data, c)
-		}
-	}
-	ioutil.WriteFile(commandFilePath+C.channel.GetChannelName(), []byte(data), 0666)
-}
-
 func (C *CommandPool) GetResponse(username, message string) string {
 	for _, c := range C.specials {
 		res := c.Response(username, message)
@@ -86,13 +73,4 @@ func (C *CommandPool) GetResponse(username, message string) string {
 	}
 
 	return ""
-}
-
-func (C *CommandPool) hasTextCommand(comm string) int {
-	for i, c := range C.commands {
-		if c.command == comm {
-			return i
-		}
-	}
-	return -1
 }

@@ -88,7 +88,6 @@ func (B *Bot) Start() {
 			if err != nil {
 				// TODO: flush commands, reload everything
 				log.Printf("Error %s, reloading irc client", err.Error())
-				B.commands.FlushTextCommands()
 				B.reloadClient()
 				continue
 			}
@@ -144,7 +143,6 @@ func (B *Bot) Start() {
 func (B *Bot) Shutdown() {
 	B.shutdown <- 1
 	log.Printf("shutting down for %s", B.channel)
-	B.commands.FlushTextCommands()
 	B.viewerlist.Close()
 }
 

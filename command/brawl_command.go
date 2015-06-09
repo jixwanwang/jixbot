@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,12 +13,13 @@ import (
 )
 
 type brawlCommand struct {
-	cp            *CommandPool
-	brawlComm     *subCommand
-	newSeasonComm *subCommand
-	pileComm      *subCommand
-	statsComm     *subCommand
-	statComm      *subCommand
+	cp               *CommandPool
+	brawlComm        *subCommand
+	newSeasonComm    *subCommand
+	pileComm         *subCommand
+	statsComm        *subCommand
+	alltimeStatsComm *subCommand
+	statComm         *subCommand
 
 	season   int
 	brawlers map[string]int
@@ -53,7 +56,7 @@ func (T *brawlCommand) Init() {
 
 	T.statsComm = &subCommand{
 		command:  "!brawlstats",
-		numArgs:  0,
+		numArgs:  1,
 		cooldown: 15 * time.Second,
 	}
 
@@ -83,6 +86,11 @@ func (T *brawlCommand) endBrawl() {
 	T.brawlers = map[string]int{}
 
 	if len(users) <= 0 {
+		return
+	}
+
+	if len(users) == 1 {
+		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
 		return
 	}
 
@@ -117,24 +125,6 @@ func (T *brawlCommand) startBrawl() {
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("A brawl has started in Twitch Chat! Type !pileon to join the fight! Everyone, get in here!"))
 }
 
-// type viewerBrawlerInterface struct {
-// 	viewers []*stats.Viewer
-// }
-
-// func (V *viewerBrawlerInterface) Len() int {
-// 	return len(V.viewers)
-// }
-
-// func (V *viewerBrawlerInterface) Less(i, j int) bool {
-// 	return V.viewers[i].BrawlsWon > V.viewers[j].BrawlsWon
-// }
-
-// func (V *viewerBrawlerInterface) Swap(i, j int) {
-// 	oldi := V.viewers[i]
-// 	V.viewers[i] = V.viewers[j]
-// 	V.viewers[j] = oldi
-// }
-
 func (T *brawlCommand) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
@@ -149,7 +139,7 @@ func (T *brawlCommand) Response(username, message string) string {
 	if err == nil && clearance >= channel.BROADCASTER && T.active == false {
 		T.season = T.season + 1
 		// TODO: add top winners of the season
-		return fmt.Sprintf("The brawl season has ended! We are now in season %d", T.season)
+		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
 	}
 
 	_, err = T.pileComm.parse(message)
@@ -176,41 +166,103 @@ func (T *brawlCommand) Response(username, message string) string {
 		}
 	}
 
-	// _, err = T.statsComm.parse(message)
-	// if err == nil {
-	// 	sorter := &viewerBrawlerInterface{T.cp.channel.AllViewers()}
-	// 	sort.Sort(sorter)
-	// 	winners := []*stats.Viewer{}
-	// 	tiedWinners := []*stats.Viewer{}
-	// 	numWins := 10000
-	// 	count := -1
-	// 	output := "All-time best brawlers: "
-	// 	for _, w := range sorter.viewers {
-	// 		if w.BrawlsWon < numWins {
-	// 			if len(tiedWinners) != 0 {
-	// 				for _, winner := range tiedWinners {
-	// 					output = fmt.Sprintf("%s%s & ", output, winner.Username)
-	// 				}
-	// 				output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
-	// 			}
-
-	// 			winners = append(winners, tiedWinners...)
-	// 			tiedWinners = []*stats.Viewer{}
-	// 			numWins = w.BrawlsWon
-	// 			count = count + 1
-	// 		}
-	// 		if w.BrawlsWon == numWins {
-	// 			tiedWinners = append(tiedWinners, w)
-	// 		}
-	// 		if numWins == 0 || count > 3 {
-	// 			break
-	// 		}
-	// 	}
-
-	// 	return output[:len(output)-2]
-	// }
+	args, err := T.statsComm.parse(message)
+	if err == nil {
+		season, _ := strconv.Atoi(args[0])
+		return T.calculateBrawlStats(season)
+	}
 
 	return ""
+}
+
+type brawlWin struct {
+	username string
+	wins     int
+}
+
+type viewerBrawlerInterface struct {
+	viewers []brawlWin
+}
+
+func (V *viewerBrawlerInterface) Len() int {
+	return len(V.viewers)
+}
+
+func (V *viewerBrawlerInterface) Less(i, j int) bool {
+	return V.viewers[i].wins > V.viewers[j].wins
+}
+
+func (V *viewerBrawlerInterface) Swap(i, j int) {
+	oldi := V.viewers[i]
+	V.viewers[i] = V.viewers[j]
+	V.viewers[j] = oldi
+}
+
+func (T *brawlCommand) calculateBrawlStats(season int) string {
+	brawlWins := []brawlWin{}
+
+	foundWinner := false
+	for _, u := range T.cp.channel.AllViewers() {
+		wins := 0
+		if season > 0 {
+			w, ok := u.GetBrawlsWon()[season]
+			if ok {
+				wins = w
+			}
+		} else {
+			wins = u.GetTotalBrawlsWon()
+		}
+		if wins > 0 {
+			foundWinner = true
+		}
+		brawlWins = append(brawlWins, brawlWin{
+			username: u.Username,
+			wins:     wins,
+		})
+	}
+
+	if !foundWinner {
+		return fmt.Sprintf("No one has won for season %d yet!", season)
+	}
+
+	sorter := &viewerBrawlerInterface{
+		viewers: brawlWins,
+	}
+	sort.Sort(sorter)
+
+	winners := []brawlWin{}
+	tiedWinners := []brawlWin{}
+	numWins := 10000
+	count := -1
+	output := ""
+	if season > 0 {
+		output = output + fmt.Sprintf("Best brawlers for season %d: ", season)
+	} else {
+		output = output + "All-time best brawlers: "
+	}
+	for _, w := range sorter.viewers {
+		if w.wins < numWins {
+			if len(tiedWinners) != 0 {
+				for _, winner := range tiedWinners {
+					output = fmt.Sprintf("%s%s & ", output, winner.username)
+				}
+				output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
+			}
+
+			winners = append(winners, tiedWinners...)
+			tiedWinners = []brawlWin{}
+			numWins = w.wins
+			count = count + 1
+		}
+		if w.wins == numWins {
+			tiedWinners = append(tiedWinners, w)
+		}
+		if numWins == 0 || count > 3 {
+			break
+		}
+	}
+
+	return output[:len(output)-2]
 }
 
 func (T *brawlCommand) String() string {
