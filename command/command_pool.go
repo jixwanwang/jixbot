@@ -28,13 +28,13 @@ func (C *CommandPool) specialCommands() []Command {
 		&deleteCommandCommand{
 			cp: C,
 		},
-		summonCommand{
+		&summonCommand{
 			cp: C,
 		},
-		moneyCommand{
+		&moneyCommand{
 			cp: C,
 		},
-		giveMoneyCommand{
+		&slotsCommand{
 			cp: C,
 		},
 		&brawlCommand{
@@ -52,11 +52,21 @@ func (C *CommandPool) specialCommands() []Command {
 	}
 }
 
+func (C *CommandPool) GetActiveCommands() []string {
+	comms := []string{}
+	for _, c := range C.specials {
+		comms = append(comms, c.ID())
+	}
+	return comms
+}
+
 func (C *CommandPool) GetResponse(username, message string) string {
 	for _, c := range C.specials {
-		res := c.Response(username, message)
-		if len(res) > 0 {
-			return res
+		if !c.WhisperOnly() {
+			res := c.Response(username, message)
+			if len(res) > 0 {
+				return res
+			}
 		}
 	}
 	for _, c := range C.globalcommands {
@@ -72,5 +82,17 @@ func (C *CommandPool) GetResponse(username, message string) string {
 		}
 	}
 
+	return ""
+}
+
+func (C *CommandPool) GetWhisperResponse(username, message string) string {
+	for _, c := range C.specials {
+		if c.WhisperOnly() {
+			res := c.Response(username, message)
+			if len(res) > 0 {
+				return res
+			}
+		}
+	}
 	return ""
 }

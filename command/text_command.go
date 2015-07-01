@@ -29,6 +29,10 @@ func (T textCommand) Response(username, message string) string {
 	return ""
 }
 
+func (T *textCommand) WhisperOnly() bool {
+	return false
+}
+
 func (B textCommand) String() string {
 	level := "viewer"
 	switch B.clearance {

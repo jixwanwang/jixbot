@@ -28,10 +28,13 @@ type Bot struct {
 	broadcaster *channel.Broadcaster
 	db          *sql.DB
 
+	groupclient *irc.Client
+	groupchat   string
+
 	shutdown chan int
 }
 
-func New(channelName, username, oath string, texter messaging.Texter, db *sql.DB) (*Bot, error) {
+func New(channelName, username, oath, groupchat string, texter messaging.Texter, db *sql.DB) (*Bot, error) {
 	bot := &Bot{
 		channel:     channelName,
 		username:    username,
@@ -40,6 +43,7 @@ func New(channelName, username, oath string, texter messaging.Texter, db *sql.DB
 		shutdown:    make(chan int),
 		broadcaster: channel.NewBroadcaster(channelName),
 		db:          db,
+		groupchat:   groupchat,
 	}
 
 	bot.startup()
@@ -58,14 +62,19 @@ func New(channelName, username, oath string, texter messaging.Texter, db *sql.DB
 	return bot, nil
 }
 
+func (B *Bot) GetActiveCommands() []string {
+	return B.commands.GetActiveCommands()
+}
+
 func (B *Bot) startup() {
 	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
-	B.reloadClient()
+	B.groupclient, _ = irc.New("199.9.253.120:80", 10)
+	B.reloadClients()
 	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter, B.db)
 }
 
-func (B *Bot) reloadClient() {
+func (B *Bot) reloadClients() {
 	err := B.client.Reload()
 	if err != nil {
 		log.Printf("%s", err.Error())
@@ -74,21 +83,32 @@ func (B *Bot) reloadClient() {
 	B.client.Send(fmt.Sprintf("PASS %s", B.oath))
 	B.client.Send(fmt.Sprintf("NICK %s", B.username))
 	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel))
-	B.client.Send("TWITCHCLIENT 2")
+	B.client.Send("CAP REQ :twitch.tv/membership")
+	B.client.Send("CAP REQ :twitch.tv/tags")
+
+	err = B.groupclient.Reload()
+	if err != nil {
+		log.Printf("%s", err.Error())
+	}
+	B.groupclient.Send(fmt.Sprintf("PASS %s", B.oath))
+	B.groupclient.Send(fmt.Sprintf("NICK %s", B.username))
+	B.groupclient.Send("CAP REQ :twitch.tv/commands")
 }
 
 func (B *Bot) Start() {
+	reads := B.client.ReadLoop()
+	groupreads := B.groupclient.ReadLoop()
+
 	for {
 		select {
 		case <-B.shutdown:
 			log.Printf("shut down!")
 			return
-		default:
-			e, err := B.client.ReadEvent()
-			if err != nil {
+		case e := <-reads:
+			if e.Err != nil {
 				// TODO: flush commands, reload everything
-				log.Printf("Error %s, reloading irc client", err.Error())
-				B.reloadClient()
+				log.Printf("Error %s, reloading irc client", e.Err.Error())
+				B.reloadClients()
 				continue
 			}
 
@@ -113,6 +133,11 @@ func (B *Bot) Start() {
 				B.viewerlist.RemoveViewer(fromToUsername(e.From))
 			case "PRIVMSG": // Message
 				username := fromToUsername(e.From)
+				isMod, ok := e.Tags["user-type"]
+				if ok && isMod == "mod" {
+					B.viewerlist.AddMod(username)
+					log.Printf("%s did + as a mod", username)
+				}
 				msg := strings.TrimPrefix(e.Message, "#"+B.channel+" :")
 				if username == "jtv" {
 					special := strings.TrimPrefix(e.Message, "jixbot :")
@@ -129,12 +154,41 @@ func (B *Bot) Start() {
 				} else if username == "twitchnotify" {
 					log.Printf("TWITCHNOTIFY SAYS: %s", msg)
 					B.processMessage(username, msg)
+				} else if msg == e.Message {
+					// Not of the channel, must be group chat
+					msg = strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
+					log.Printf("%s said in group chat: %s", username, msg)
 				} else {
 					B.processMessage(username, msg)
 					log.Printf("%s said: %s", username, msg)
 				}
+
 			default: //ignore
-				// log.Printf("Unknown: %v", e)
+				log.Printf("Unknown: %v", e)
+			}
+		case e := <-groupreads:
+			if e.Err != nil {
+				// TODO: flush commands, reload everything
+				log.Printf("Error %s, reloading irc client", e.Err.Error())
+				B.reloadClients()
+				continue
+			}
+
+			switch e.Kind {
+			case "PRIVMSG": // Message
+				username := fromToUsername(e.From)
+				msg := strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
+				B.processMessage(username, msg)
+				log.Printf("%s said in group chat: %s", username, msg)
+			case "WHISPER":
+				from := fromToUsername(e.From)
+				space := strings.Index(e.Message, " :")
+				to := e.Message[:space]
+				msg := strings.TrimPrefix(e.Message, to+" :")
+				log.Printf("%s whispered to %s: %s", from, to, msg)
+				B.processWhisper(from, msg)
+			default: //ignore
+				log.Printf("Don't care about this group chat message: %v", e)
 			}
 		}
 	}
@@ -152,6 +206,14 @@ func fromToUsername(from string) string {
 		exclam = len(from)
 	}
 	return strings.ToLower(from[1:exclam])
+}
+
+func (B *Bot) processWhisper(username, msg string) {
+	B.viewerlist.RecordMessage(username, msg)
+	response := B.commands.GetWhisperResponse(username, msg)
+	if len(response) > 0 {
+		B.groupclient.Whisper(B.channel, username, response)
+	}
 }
 
 func (B *Bot) processMessage(username, msg string) {

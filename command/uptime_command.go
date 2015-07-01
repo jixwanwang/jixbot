@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jixwanwang/jixbot/channel"
 )
 
 type uptimeCommand struct {
@@ -19,6 +21,7 @@ func (T *uptimeCommand) Init() {
 		numArgs:    0,
 		cooldown:   15 * time.Second,
 		lastCalled: time.Now().Add(-15 * time.Second),
+		clearance:  channel.VIEWER,
 	}
 }
 
@@ -28,8 +31,9 @@ func (T *uptimeCommand) ID() string {
 
 func (T *uptimeCommand) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
+	clearance := T.cp.channel.GetLevel(username)
 
-	_, err := T.upComm.parse(message)
+	_, err := T.upComm.parse(message, clearance)
 	if err == nil {
 		if !T.cp.broadcaster.Online {
 			return fmt.Sprintf("%s isn't online.", T.cp.channel.GetChannelName())
@@ -40,6 +44,10 @@ func (T *uptimeCommand) Response(username, message string) string {
 	}
 
 	return ""
+}
+
+func (T *uptimeCommand) WhisperOnly() bool {
+	return false
 }
 
 func (T *uptimeCommand) String() string {

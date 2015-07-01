@@ -20,12 +20,14 @@ func (T *addCommandCommand) Init() {
 		numArgs:    1,
 		cooldown:   1 * time.Second,
 		lastCalled: time.Now().Add(-1 * time.Second),
+		clearance:  channel.MOD,
 	}
 	T.modComm = &subCommand{
 		command:    "!addmodcommand",
 		numArgs:    1,
 		cooldown:   1 * time.Second,
 		lastCalled: time.Now().Add(-1 * time.Second),
+		clearance:  channel.MOD,
 	}
 }
 
@@ -34,13 +36,14 @@ func (T *addCommandCommand) ID() string {
 }
 
 func (T *addCommandCommand) Response(username, message string) string {
+	clearance := T.cp.channel.GetLevel(username)
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return ""
 	}
 
 	var comm *textCommand
 
-	args, err := T.plebComm.parse(message)
+	args, err := T.plebComm.parse(message, clearance)
 	if err == nil && args[0][:1] == "!" {
 		comm = &textCommand{
 			clearance: channel.VIEWER,
@@ -49,7 +52,7 @@ func (T *addCommandCommand) Response(username, message string) string {
 		}
 	}
 
-	args, err = T.modComm.parse(message)
+	args, err = T.modComm.parse(message, clearance)
 	if err == nil && args[0][:1] == "!" {
 		comm = &textCommand{
 			clearance: channel.MOD,
@@ -83,6 +86,10 @@ func (T *addCommandCommand) Response(username, message string) string {
 	T.cp.db.Exec("INSERT INTO textcommands (channel, command, message, clearance) VALUES ($1,$2,$3,$4)", T.cp.channel.GetChannelName(), comm.command, comm.response, comm.clearance)
 	T.cp.commands = append(T.cp.commands, comm)
 	return fmt.Sprintf("@%s Command %s -> %s created", username, comm.command, comm.response)
+}
+
+func (T *addCommandCommand) WhisperOnly() bool {
+	return false
 }
 
 func (T *addCommandCommand) String() string {

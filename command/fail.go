@@ -37,6 +37,10 @@ func (T fail) Response(username, message string) string {
 	return ""
 }
 
+func (T *fail) WhisperOnly() bool {
+	return false
+}
+
 func (T fail) String() string {
 	return ""
 }

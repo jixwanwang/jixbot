@@ -44,17 +44,10 @@ func (T *deleteCommandCommand) Response(username, message string) string {
 	}
 
 	return ""
-	// existing := T.cp.hasTextCommand(remaining)
+}
 
-	// if existing < 0 {
-	// 	return ""
-	// }
-
-	// T.cp.commands = append(T.cp.commands[:existing], T.cp.commands[existing+1:]...)
-
-	// T.cp.FlushTextCommands()
-
-	// return fmt.Sprintf("@%s Command %s deleted", username, remaining)
+func (T *deleteCommandCommand) WhisperOnly() bool {
+	return false
 }
 
 func (T *deleteCommandCommand) String() string {

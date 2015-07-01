@@ -31,6 +31,7 @@ type ViewerList struct {
 
 	// Other properties
 	Currency string
+	SubName  string
 	Emotes   []string
 }
 
@@ -45,6 +46,8 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	}
 
 	rows, err := db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
+	viewers.Currency = "Coin"
+	viewers.SubName = "subscribers"
 	if err != nil {
 		log.Printf("couldn't get channel_properties %s", err.Error())
 	}
@@ -53,6 +56,9 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 		rows.Scan(&k, &v)
 		if k == "currency" {
 			viewers.Currency = v
+		}
+		if k == "subname" {
+			viewers.SubName = v
 		}
 	}
 	rows.Close()
@@ -65,13 +71,14 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	for rows.Next() {
 		var emote string
 		err := rows.Scan(&emote)
-		if err != nil {
+		if err == nil {
 			emotes = append(emotes, emote)
 		}
 	}
 	rows.Close()
 
 	viewers.Emotes = emotes
+	log.Printf("Loaded emotes %s for %s", emotes, channel)
 
 	return viewers
 }
@@ -145,7 +152,7 @@ func (V *ViewerList) Tick() {
 	for _, v := range V.viewers {
 		v.AddMoney(1)
 	}
-	V.db.Flush()
+	// V.db.Flush()
 }
 
 func (V *ViewerList) Close() {

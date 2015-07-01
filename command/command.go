@@ -20,6 +20,7 @@ const (
 
 type Command interface {
 	ID() string
+	WhisperOnly() bool
 	Init()
 	Response(username, message string) string
 	String() string
@@ -99,19 +100,26 @@ func filterCommands(db *sql.DB, channelName string, commands []Command) []Comman
 }
 
 var BadCommandError = fmt.Errorf("Bad command")
+var NotPermittedError = fmt.Errorf("Not permitted to use this command")
 
 type subCommand struct {
 	command    string
 	numArgs    int
 	cooldown   time.Duration
 	lastCalled time.Time
+	clearance  channel.Level
 }
 
-func (C *subCommand) parse(message string) ([]string, error) {
+func (C *subCommand) parse(message string, clearance channel.Level) ([]string, error) {
 	args := []string{}
 
+	if strings.Index(message, C.command) >= 0 {
+		log.Printf("%s called with clearance %s", C.command, clearance)
+	}
+
 	// Rate limit
-	if C.cooldown.Nanoseconds() > 0 && time.Since(C.lastCalled).Nanoseconds() < C.cooldown.Nanoseconds() {
+	if C.cooldown.Nanoseconds() > 0 &&
+		time.Since(C.lastCalled).Nanoseconds() < C.cooldown.Nanoseconds() {
 		return args, BadCommandError
 	}
 
@@ -131,6 +139,9 @@ func (C *subCommand) parse(message string) ([]string, error) {
 	}
 
 	if strings.HasPrefix(message, prefix) {
+		if clearance < C.clearance {
+			return args, NotPermittedError
+		}
 		args = parts[1 : C.numArgs+1]
 		remaining := strings.TrimPrefix(message, prefix)
 		if len(remaining) > 0 {

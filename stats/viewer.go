@@ -124,9 +124,9 @@ func (V *Viewer) save() {
 	// TODO: write brawls, money, lines typed to db
 	if V.brawlsWon != nil {
 		for season, wins := range V.brawlsWon {
-			insert := "INSERT INTO brawlwins (season, viewer_id, wins) SELECT $1, $2, $3"
-			upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2"
-			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins)
+			insert := "INSERT INTO brawlwins (season, viewer_id, wins, channel) SELECT $1, $2, $3, $4"
+			upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2 AND channel=$4"
+			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins, V.manager.channel)
 		}
 	}
 	if V.money > 0 {

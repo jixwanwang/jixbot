@@ -11,15 +11,15 @@ type giveMoneyCommand struct {
 	currencyName string
 }
 
-func (T giveMoneyCommand) Init() {
+func (T *giveMoneyCommand) Init() {
 
 }
 
-func (T giveMoneyCommand) ID() string {
+func (T *giveMoneyCommand) ID() string {
 	return "money"
 }
 
-func (T giveMoneyCommand) Response(username, message string) string {
+func (T *giveMoneyCommand) Response(username, message string) string {
 	remaining := strings.TrimPrefix(message, "!givecash ")
 	if remaining == message {
 		return ""
@@ -39,12 +39,12 @@ func (T giveMoneyCommand) Response(username, message string) string {
 
 	to_viewer, ok := T.cp.channel.InChannel(to_user)
 	if !ok {
-		return fmt.Sprintf("@%s that user isn't in the chat.", username)
+		return "" //fmt.Sprintf("@%s that user isn't in the chat.", username)
 	}
 
 	viewer, _ := T.cp.channel.InChannel(username)
 	if viewer.GetMoney() < amount {
-		return fmt.Sprintf("@%s you don't have enough %ss", username, T.cp.channel.Currency)
+		return "" //fmt.Sprintf("@%s you don't have enough %ss", username, T.cp.channel.Currency)
 	}
 
 	viewer.AddMoney(-amount)
@@ -58,6 +58,10 @@ func (T giveMoneyCommand) Response(username, message string) string {
 	return fmt.Sprintf("@%s gave @%s %d %ss!", username, to_user, amount, T.cp.channel.Currency)
 }
 
-func (T giveMoneyCommand) String() string {
+func (T *giveMoneyCommand) WhisperOnly() bool {
+	return false
+}
+
+func (T *giveMoneyCommand) String() string {
 	return ""
 }

@@ -30,6 +30,10 @@ func (T summonCommand) Response(username, message string) string {
 	return ""
 }
 
+func (T *summonCommand) WhisperOnly() bool {
+	return false
+}
+
 func (T summonCommand) String() string {
 	return ""
 }

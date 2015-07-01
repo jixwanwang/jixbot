@@ -10,8 +10,7 @@ import (
 const emotesFilePath = "data/emotes/"
 
 type subMessage struct {
-	cp     *CommandPool
-	active bool
+	cp *CommandPool
 }
 
 func (T *subMessage) Init() {
@@ -22,10 +21,6 @@ func (T *subMessage) ID() string {
 }
 
 func (T *subMessage) Response(username, message string) string {
-	if !T.active {
-		return ""
-	}
-
 	if username != "twitchnotify" {
 		return ""
 	}
@@ -35,7 +30,7 @@ func (T *subMessage) Response(username, message string) string {
 	if strings.Index(msg, "just subscribed!") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
-		return fmt.Sprintf("Thank you for subscribing %s, welcome to the HotShots! %s", sub, emotes)
+		return fmt.Sprintf("Thank you for subscribing %s, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes)
 	} else if strings.Index(msg, "subscribed for ") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
@@ -59,6 +54,10 @@ func (T *subMessage) Response(username, message string) string {
 	}
 
 	return ""
+}
+
+func (T *subMessage) WhisperOnly() bool {
+	return false
 }
 
 func (T *subMessage) String() string {

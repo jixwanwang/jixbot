@@ -28,6 +28,7 @@ func main() {
 	dbname := os.Getenv("DB_NAME")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASS")
+	groupchat := os.Getenv("GROUPCHAT")
 
 	channels := strings.Split(os.Getenv("CHANNELS"), ",")
 
@@ -40,7 +41,7 @@ func main() {
 
 	bots := []*stream_bot.Bot{}
 	for _, channel := range channels {
-		b, err := stream_bot.New(channel, nickname, oath, texter, db)
+		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
 
 		if err != nil {
 			log.Fatalf("Failed to create client for %s: %s", channel, err.Error())

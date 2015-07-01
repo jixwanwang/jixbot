@@ -15,15 +15,15 @@ type slotsCommand struct {
 	currencyName string
 }
 
-func (T slotsCommand) Init() {
-
+func (T *slotsCommand) Init() {
+	T.uses = map[string]time.Time{}
 }
 
-func (T slotsCommand) ID() string {
-	return "moneygames"
+func (T *slotsCommand) ID() string {
+	return "moneyslots"
 }
 
-func (T slotsCommand) Response(username, message string) string {
+func (T *slotsCommand) Response(username, message string) string {
 	if strings.HasPrefix(strings.ToLower(message), "!slots") {
 		lastUse, ok := T.uses[username]
 		if ok && time.Since(lastUse) < 15*time.Second {
@@ -47,7 +47,7 @@ func (T slotsCommand) Response(username, message string) string {
 		}
 
 		if user.GetMoney() < cost {
-			return fmt.Sprintf("@%s You don't have enough money.", username)
+			return fmt.Sprintf("You don't have enough money.")
 		}
 
 		T.uses[username] = time.Now()
@@ -69,15 +69,19 @@ func (T slotsCommand) Response(username, message string) string {
 
 		user.AddMoney(winnings - cost)
 		if winnings > cost {
-			return fmt.Sprintf("@%s You won %d %ss", username, winnings-cost, T.cp.channel.Currency)
+			return fmt.Sprintf("You won %d %ss", winnings-cost, T.cp.channel.Currency)
 		} else {
-			return fmt.Sprintf("@%s You lost %d %ss", username, cost-winnings, T.cp.channel.Currency)
+			return fmt.Sprintf("You lost %d %ss", cost-winnings, T.cp.channel.Currency)
 		}
 	}
 
 	return ""
 }
 
-func (T slotsCommand) String() string {
+func (T *slotsCommand) WhisperOnly() bool {
+	return true
+}
+
+func (T *slotsCommand) String() string {
 	return ""
 }

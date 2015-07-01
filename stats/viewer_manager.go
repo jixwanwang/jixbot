@@ -104,16 +104,4 @@ func (V *ViewerManager) Flush() {
 			v.save()
 		}
 	}
-
-	// output := ""
-	// for _, v := range V.viewers {
-	// 	if v.updated {
-	// 		v.save()
-	// 	}
-	// 	data, _ := json.Marshal(v)
-	// 	log.Printf("Saved %v for %s", string(data), V.channel)
-	// 	output = output + string(data) + "\n"
-	// }
-
-	// ioutil.WriteFile(statsFilePath+V.channel+"_stats", []byte(output), 0666)
 }

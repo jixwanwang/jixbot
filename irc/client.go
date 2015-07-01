@@ -16,6 +16,7 @@ type Client struct {
 	// Max messages per 15 seconds
 	messageRate int
 	server      string
+	closed      bool
 }
 
 type message struct {
@@ -24,9 +25,11 @@ type message struct {
 }
 
 type Event struct {
+	Tags    map[string]string
 	From    string
 	Kind    string
 	Message string
+	Err     error
 }
 
 func New(server string, messageRate int) (*Client, error) {
@@ -45,6 +48,7 @@ func (C *Client) Reload() error {
 	br := bufio.NewReaderSize(conn, 512)
 	C.br = br
 	C.socket = conn
+	C.closed = false
 
 	return err
 }
@@ -77,28 +81,94 @@ func (C *Client) Say(channel, msg string) {
 	}
 }
 
-func (C *Client) ReadEvent() (Event, error) {
-	t := time.Now()
-	t = t.Add(1 * time.Minute)
-
-	C.socket.SetReadDeadline(t)
-
-	msg, err := C.br.ReadString('\n')
-	if err != nil {
-		return Event{}, err
-	}
-
-	space := strings.Index(msg, " ")
-	from := msg[:space]
-
-	msg = msg[space+1:]
-	space = strings.Index(msg, " ")
-	if space == -1 {
-		return Event{from, msg, ""}, nil
-	}
-	kind := msg[:space]
-
-	message := strings.TrimSpace(msg[space:])
-
-	return Event{from, kind, message}, nil
+func (C *Client) Whisper(channel, to, msg string) {
+	C.Say(channel, fmt.Sprintf("/w %s %s", to, msg))
 }
+
+func (C *Client) ReadLoop() chan Event {
+	events := make(chan Event, 10)
+
+	go func() {
+		for {
+			t := time.Now()
+			t = t.Add(2 * time.Minute)
+
+			C.socket.SetReadDeadline(t)
+
+			msg, err := C.br.ReadString('\n')
+			if err != nil {
+				events <- Event{Err: err}
+				continue
+			}
+
+			tags := map[string]string{}
+			// Parse tags
+			if msg[0:1] == "@" {
+				space1 := strings.Index(msg, " ")
+				tagString := msg[:space1]
+				for _, s := range strings.Split(tagString, ";") {
+					i := strings.Index(s, "=")
+					tags[s[:i]] = s[i+1:]
+				}
+				msg = msg[space1+1:]
+			}
+
+			space := strings.Index(msg, " ")
+			if space == -1 {
+				events <- Event{}
+				continue
+			}
+			from := msg[:space]
+
+			msg = msg[space+1:]
+			space = strings.Index(msg, " ")
+			if space == -1 {
+				events <- Event{
+					Tags:    tags,
+					From:    from,
+					Kind:    msg,
+					Message: "",
+				}
+				continue
+			}
+			kind := msg[:space]
+
+			message := strings.TrimSpace(msg[space:])
+
+			events <- Event{
+				Tags:    tags,
+				From:    from,
+				Kind:    kind,
+				Message: message,
+			}
+		}
+	}()
+
+	return events
+}
+
+// func (C *Client) ReadEvent() (Event, error) {
+// 	t := time.Now()
+// 	t = t.Add(1 * time.Minute)
+
+// 	C.socket.SetReadDeadline(t)
+
+// 	msg, err := C.br.ReadString('\n')
+// 	if err != nil {
+// 		return Event{}, err
+// 	}
+
+// 	space := strings.Index(msg, " ")
+// 	from := msg[:space]
+
+// 	msg = msg[space+1:]
+// 	space = strings.Index(msg, " ")
+// 	if space == -1 {
+// 		return Event{from, msg, ""}, nil
+// 	}
+// 	kind := msg[:space]
+
+// 	message := strings.TrimSpace(msg[space:])
+
+// 	return Event{from, kind, message}, nil
+// }

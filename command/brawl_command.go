@@ -27,7 +27,7 @@ type brawlCommand struct {
 }
 
 func (T *brawlCommand) Init() {
-	row := T.cp.db.QueryRow("select * from (select distinct(season) from brawlwins order by season desc) as seasons limit 1")
+	row := T.cp.db.QueryRow("select * from (select distinct(season) from brawlwins where channel=$1 order by season desc) as seasons limit 1", T.cp.channel.GetChannelName())
 	if err := row.Scan(&T.season); err != nil {
 		log.Printf("couldn't determine the brawl season, assuming to be 1")
 		T.season = 1
@@ -37,33 +37,38 @@ func (T *brawlCommand) Init() {
 	T.brawlers = map[string]int{}
 
 	T.brawlComm = &subCommand{
-		command:  "!brawl",
-		numArgs:  0,
-		cooldown: 15 * time.Minute,
+		command:   "!brawl",
+		numArgs:   0,
+		cooldown:  15 * time.Minute,
+		clearance: channel.MOD,
 	}
 
 	T.newSeasonComm = &subCommand{
-		command:  "!newbrawlseason",
-		numArgs:  0,
-		cooldown: 12 * time.Second,
+		command:   "!newbrawlseason",
+		numArgs:   0,
+		cooldown:  12 * time.Second,
+		clearance: channel.BROADCASTER,
 	}
 
 	T.pileComm = &subCommand{
-		command:  "!pileon",
-		numArgs:  0,
-		cooldown: 0,
+		command:   "!pileon",
+		numArgs:   0,
+		cooldown:  0,
+		clearance: channel.VIEWER,
 	}
 
 	T.statsComm = &subCommand{
-		command:  "!brawlstats",
-		numArgs:  1,
-		cooldown: 15 * time.Second,
+		command:   "!brawlstats",
+		numArgs:   1,
+		cooldown:  15 * time.Second,
+		clearance: channel.VIEWER,
 	}
 
 	T.statComm = &subCommand{
-		command:  "!brawlwins",
-		numArgs:  0,
-		cooldown: 5 * time.Second,
+		command:   "!brawlwins",
+		numArgs:   0,
+		cooldown:  5 * time.Second,
+		clearance: channel.VIEWER,
 	}
 }
 
@@ -129,20 +134,20 @@ func (T *brawlCommand) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
 
-	_, err := T.brawlComm.parse(message)
-	if err == nil && clearance >= channel.MOD && T.active == false {
+	_, err := T.brawlComm.parse(message, clearance)
+	if err == nil && T.active == false {
 		T.startBrawl()
 		return ""
 	}
 
-	_, err = T.newSeasonComm.parse(message)
-	if err == nil && clearance >= channel.BROADCASTER && T.active == false {
+	_, err = T.newSeasonComm.parse(message, clearance)
+	if err == nil && T.active == false {
 		T.season = T.season + 1
 		// TODO: add top winners of the season
 		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
 	}
 
-	_, err = T.pileComm.parse(message)
+	_, err = T.pileComm.parse(message, clearance)
 	if err == nil && T.active == true {
 		_, in := T.cp.channel.InChannel(username)
 		if !in {
@@ -153,7 +158,7 @@ func (T *brawlCommand) Response(username, message string) string {
 		return ""
 	}
 
-	_, err = T.statComm.parse(message)
+	_, err = T.statComm.parse(message, clearance)
 	if err == nil {
 		user, in := T.cp.channel.InChannel(username)
 		if in {
@@ -166,7 +171,7 @@ func (T *brawlCommand) Response(username, message string) string {
 		}
 	}
 
-	args, err := T.statsComm.parse(message)
+	args, err := T.statsComm.parse(message, clearance)
 	if err == nil {
 		season, _ := strconv.Atoi(args[0])
 		return T.calculateBrawlStats(season)
@@ -257,12 +262,17 @@ func (T *brawlCommand) calculateBrawlStats(season int) string {
 		if w.wins == numWins {
 			tiedWinners = append(tiedWinners, w)
 		}
-		if numWins == 0 || count > 3 {
+		// Don't display 0 wins, only keep top 5 win groups, and ignore groups with more than 7 people in it.
+		if numWins == 0 || count > 4 || len(tiedWinners) > 7 {
 			break
 		}
 	}
 
 	return output[:len(output)-2]
+}
+
+func (T *brawlCommand) WhisperOnly() bool {
+	return false
 }
 
 func (T *brawlCommand) String() string {
