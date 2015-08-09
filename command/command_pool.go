@@ -22,25 +22,25 @@ type CommandPool struct {
 
 func (C *CommandPool) specialCommands() []Command {
 	return []Command{
-		&addCommandCommand{
+		&addCommand{
 			cp: C,
 		},
-		&deleteCommandCommand{
+		&deleteCommand{
 			cp: C,
 		},
-		&summonCommand{
+		&summon{
 			cp: C,
 		},
-		&moneyCommand{
+		&money{
 			cp: C,
 		},
-		&slotsCommand{
+		&slots{
 			cp: C,
 		},
-		&brawlCommand{
+		&brawl{
 			cp: C,
 		},
-		&uptimeCommand{
+		&uptime{
 			cp: C,
 		},
 		&subMessage{

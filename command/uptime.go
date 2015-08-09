@@ -9,13 +9,13 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 )
 
-type uptimeCommand struct {
+type uptime struct {
 	cp        *CommandPool
 	lastCheck time.Time
 	upComm    *subCommand
 }
 
-func (T *uptimeCommand) Init() {
+func (T *uptime) Init() {
 	T.upComm = &subCommand{
 		command:    "!uptime",
 		numArgs:    0,
@@ -25,11 +25,11 @@ func (T *uptimeCommand) Init() {
 	}
 }
 
-func (T *uptimeCommand) ID() string {
+func (T *uptime) ID() string {
 	return "uptime"
 }
 
-func (T *uptimeCommand) Response(username, message string) string {
+func (T *uptime) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
 
@@ -46,10 +46,10 @@ func (T *uptimeCommand) Response(username, message string) string {
 	return ""
 }
 
-func (T *uptimeCommand) WhisperOnly() bool {
+func (T *uptime) WhisperOnly() bool {
 	return false
 }
 
-func (T *uptimeCommand) String() string {
+func (T *uptime) String() string {
 	return "Uptime Command"
 }

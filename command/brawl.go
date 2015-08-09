@@ -12,7 +12,7 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 )
 
-type brawlCommand struct {
+type brawl struct {
 	cp               *CommandPool
 	brawlComm        *subCommand
 	newSeasonComm    *subCommand
@@ -26,7 +26,7 @@ type brawlCommand struct {
 	active   bool
 }
 
-func (T *brawlCommand) Init() {
+func (T *brawl) Init() {
 	row := T.cp.db.QueryRow("select * from (select distinct(season) from brawlwins where channel=$1 order by season desc) as seasons limit 1", T.cp.channel.GetChannelName())
 	if err := row.Scan(&T.season); err != nil {
 		log.Printf("couldn't determine the brawl season, assuming to be 1")
@@ -72,11 +72,11 @@ func (T *brawlCommand) Init() {
 	}
 }
 
-func (T *brawlCommand) ID() string {
+func (T *brawl) ID() string {
 	return "brawl"
 }
 
-func (T *brawlCommand) endBrawl() {
+func (T *brawl) endBrawl() {
 	T.active = false
 	log.Printf("Brawl ended")
 
@@ -113,9 +113,11 @@ func (T *brawlCommand) endBrawl() {
 	if in {
 		winningUser.WinBrawl(T.season)
 	}
+
+	T.cp.channel.Flush()
 }
 
-func (T *brawlCommand) startBrawl() {
+func (T *brawl) startBrawl() {
 	T.active = true
 
 	duration := rand.Intn(120) + 60
@@ -130,7 +132,7 @@ func (T *brawlCommand) startBrawl() {
 	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("A brawl has started in Twitch Chat! Type !pileon to join the fight! Everyone, get in here!"))
 }
 
-func (T *brawlCommand) Response(username, message string) string {
+func (T *brawl) Response(username, message string) string {
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
 
@@ -203,7 +205,7 @@ func (V *viewerBrawlerInterface) Swap(i, j int) {
 	V.viewers[j] = oldi
 }
 
-func (T *brawlCommand) calculateBrawlStats(season int) string {
+func (T *brawl) calculateBrawlStats(season int) string {
 	brawlWins := []brawlWin{}
 
 	foundWinner := false
@@ -271,10 +273,10 @@ func (T *brawlCommand) calculateBrawlStats(season int) string {
 	return output[:len(output)-2]
 }
 
-func (T *brawlCommand) WhisperOnly() bool {
+func (T *brawl) WhisperOnly() bool {
 	return false
 }
 
-func (T *brawlCommand) String() string {
+func (T *brawl) String() string {
 	return ""
 }

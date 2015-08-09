@@ -3,6 +3,7 @@ package channel
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/jixwanwang/jixbot/stats"
 )
@@ -80,6 +81,15 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	viewers.Emotes = emotes
 	log.Printf("Loaded emotes %s for %s", emotes, channel)
 
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		for {
+			<-ticker.C
+			log.Printf("Saving EVERYTHING")
+			viewers.db.Flush()
+		}
+	}()
+
 	return viewers
 }
 
@@ -148,11 +158,14 @@ func (V *ViewerList) RecordMessage(username, msg string) {
 }
 
 func (V *ViewerList) Tick() {
-	// TODO: make money work
 	for _, v := range V.viewers {
 		v.AddMoney(1)
 	}
-	// V.db.Flush()
+}
+
+func (V *ViewerList) Flush() {
+	log.Printf("Flushing viewerlist")
+	V.db.Flush()
 }
 
 func (V *ViewerList) Close() {

@@ -9,21 +9,21 @@ import (
 	"time"
 )
 
-type slotsCommand struct {
+type slots struct {
 	cp           *CommandPool
 	uses         map[string]time.Time
 	currencyName string
 }
 
-func (T *slotsCommand) Init() {
+func (T *slots) Init() {
 	T.uses = map[string]time.Time{}
 }
 
-func (T *slotsCommand) ID() string {
+func (T *slots) ID() string {
 	return "moneyslots"
 }
 
-func (T *slotsCommand) Response(username, message string) string {
+func (T *slots) Response(username, message string) string {
 	if strings.HasPrefix(strings.ToLower(message), "!slots") {
 		lastUse, ok := T.uses[username]
 		if ok && time.Since(lastUse) < 15*time.Second {
@@ -78,10 +78,10 @@ func (T *slotsCommand) Response(username, message string) string {
 	return ""
 }
 
-func (T *slotsCommand) WhisperOnly() bool {
+func (T *slots) WhisperOnly() bool {
 	return true
 }
 
-func (T *slotsCommand) String() string {
+func (T *slots) String() string {
 	return ""
 }

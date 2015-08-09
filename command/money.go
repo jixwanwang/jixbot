@@ -5,19 +5,19 @@ import (
 	"strings"
 )
 
-type moneyCommand struct {
+type money struct {
 	cp *CommandPool
 }
 
-func (T *moneyCommand) Init() {
+func (T *money) Init() {
 
 }
 
-func (T *moneyCommand) ID() string {
+func (T *money) ID() string {
 	return "money"
 }
 
-func (T *moneyCommand) Response(username, message string) string {
+func (T *money) Response(username, message string) string {
 	viewer, ok := T.cp.channel.InChannel(username)
 	if strings.TrimSpace(message) == "!cash" && ok {
 		return fmt.Sprintf("You have %d %ss", viewer.GetMoney(), T.cp.channel.Currency)
@@ -26,10 +26,10 @@ func (T *moneyCommand) Response(username, message string) string {
 	return ""
 }
 
-func (T *moneyCommand) WhisperOnly() bool {
+func (T *money) WhisperOnly() bool {
 	return true
 }
 
-func (T *moneyCommand) String() string {
+func (T *money) String() string {
 	return ""
 }

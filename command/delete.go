@@ -7,19 +7,19 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 )
 
-type deleteCommandCommand struct {
+type deleteCommand struct {
 	cp *CommandPool
 }
 
-func (T *deleteCommandCommand) Init() {
+func (T *deleteCommand) Init() {
 
 }
 
-func (T *deleteCommandCommand) ID() string {
+func (T *deleteCommand) ID() string {
 	return "delete"
 }
 
-func (T *deleteCommandCommand) Response(username, message string) string {
+func (T *deleteCommand) Response(username, message string) string {
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return ""
 	}
@@ -46,10 +46,10 @@ func (T *deleteCommandCommand) Response(username, message string) string {
 	return ""
 }
 
-func (T *deleteCommandCommand) WhisperOnly() bool {
+func (T *deleteCommand) WhisperOnly() bool {
 	return false
 }
 
-func (T *deleteCommandCommand) String() string {
+func (T *deleteCommand) String() string {
 	return ""
 }

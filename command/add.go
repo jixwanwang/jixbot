@@ -8,13 +8,13 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 )
 
-type addCommandCommand struct {
+type addCommand struct {
 	cp       *CommandPool
 	plebComm *subCommand
 	modComm  *subCommand
 }
 
-func (T *addCommandCommand) Init() {
+func (T *addCommand) Init() {
 	T.plebComm = &subCommand{
 		command:    "!addcommand",
 		numArgs:    1,
@@ -31,11 +31,11 @@ func (T *addCommandCommand) Init() {
 	}
 }
 
-func (T *addCommandCommand) ID() string {
+func (T *addCommand) ID() string {
 	return "add"
 }
 
-func (T *addCommandCommand) Response(username, message string) string {
+func (T *addCommand) Response(username, message string) string {
 	clearance := T.cp.channel.GetLevel(username)
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return ""
@@ -88,10 +88,10 @@ func (T *addCommandCommand) Response(username, message string) string {
 	return fmt.Sprintf("@%s Command %s -> %s created", username, comm.command, comm.response)
 }
 
-func (T *addCommandCommand) WhisperOnly() bool {
+func (T *addCommand) WhisperOnly() bool {
 	return false
 }
 
-func (T *addCommandCommand) String() string {
+func (T *addCommand) String() string {
 	return ""
 }

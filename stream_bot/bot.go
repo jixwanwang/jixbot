@@ -69,7 +69,7 @@ func (B *Bot) GetActiveCommands() []string {
 func (B *Bot) startup() {
 	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
-	B.groupclient, _ = irc.New("199.9.253.120:80", 10)
+	B.groupclient, _ = irc.New("199.9.253.120:443", 10)
 	B.reloadClients()
 	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter, B.db)
 }
@@ -109,6 +109,7 @@ func (B *Bot) Start() {
 				// TODO: flush commands, reload everything
 				log.Printf("Error %s, reloading irc client", e.Err.Error())
 				B.reloadClients()
+				B.viewerlist.Flush()
 				continue
 			}
 

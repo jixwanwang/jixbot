@@ -7,20 +7,20 @@ import (
 	"github.com/jixwanwang/jixbot/messaging"
 )
 
-type summonCommand struct {
+type summon struct {
 	texter messaging.Texter
 	cp     *CommandPool
 }
 
-func (T summonCommand) Init() {
+func (T summon) Init() {
 
 }
 
-func (T summonCommand) ID() string {
+func (T summon) ID() string {
 	return "summon"
 }
 
-func (T summonCommand) Response(username, message string) string {
+func (T summon) Response(username, message string) string {
 	index := strings.Index(strings.ToLower(message), "jix")
 	_, ok := T.cp.channel.InChannel("jixwanwang")
 	if index >= 0 && !ok {
@@ -30,10 +30,10 @@ func (T summonCommand) Response(username, message string) string {
 	return ""
 }
 
-func (T *summonCommand) WhisperOnly() bool {
+func (T *summon) WhisperOnly() bool {
 	return false
 }
 
-func (T summonCommand) String() string {
+func (T summon) String() string {
 	return ""
 }
