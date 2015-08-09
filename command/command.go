@@ -26,11 +26,12 @@ type Command interface {
 	String() string
 }
 
-func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
+func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc, ircW *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
 	cp := &CommandPool{
 		channel:     channel,
 		broadcaster: broadcaster,
 		irc:         irc,
+		ircW:        ircW,
 		db:          db,
 		texter:      texter,
 	}
@@ -117,6 +118,10 @@ func (C *subCommand) parse(message string, clearance channel.Level) ([]string, e
 		log.Printf("%s called with clearance %s", C.command, clearance)
 	}
 
+	if clearance < C.clearance {
+		return args, NotPermittedError
+	}
+
 	// Rate limit
 	if C.cooldown.Nanoseconds() > 0 &&
 		time.Since(C.lastCalled).Nanoseconds() < C.cooldown.Nanoseconds() {
@@ -139,13 +144,10 @@ func (C *subCommand) parse(message string, clearance channel.Level) ([]string, e
 	}
 
 	if strings.HasPrefix(message, prefix) {
-		if clearance < C.clearance {
-			return args, NotPermittedError
-		}
 		args = parts[1 : C.numArgs+1]
 		remaining := strings.TrimPrefix(message, prefix)
 		if len(remaining) > 0 {
-			args = append(args, strings.TrimPrefix(message, prefix))
+			args = append(args, strings.TrimSpace(strings.TrimPrefix(message, prefix)))
 		}
 		C.lastCalled = time.Now()
 		return args, nil

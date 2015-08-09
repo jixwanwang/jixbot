@@ -71,7 +71,7 @@ func (B *Bot) startup() {
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
 	B.groupclient, _ = irc.New("199.9.253.120:443", 10)
 	B.reloadClients()
-	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.texter, B.db)
+	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.groupclient, B.texter, B.db)
 }
 
 func (B *Bot) reloadClients() {

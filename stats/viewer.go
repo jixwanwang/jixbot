@@ -59,7 +59,7 @@ func (V *Viewer) WinBrawl(season int) {
 	} else {
 		V.brawlsWon[season] = 1
 	}
-	V.AddMoney(100)
+	V.AddMoney(500)
 
 	V.updated = true
 }

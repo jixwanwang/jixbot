@@ -11,6 +11,7 @@ import (
 type CommandPool struct {
 	channel     *channel.ViewerList
 	irc         *irc.Client
+	ircW        *irc.Client
 	broadcaster *channel.Broadcaster
 	texter      messaging.Texter
 	db          *sql.DB
@@ -62,11 +63,9 @@ func (C *CommandPool) GetActiveCommands() []string {
 
 func (C *CommandPool) GetResponse(username, message string) string {
 	for _, c := range C.specials {
-		if !c.WhisperOnly() {
-			res := c.Response(username, message)
-			if len(res) > 0 {
-				return res
-			}
+		res := c.Response(username, message)
+		if len(res) > 0 {
+			return res
 		}
 	}
 	for _, c := range C.globalcommands {

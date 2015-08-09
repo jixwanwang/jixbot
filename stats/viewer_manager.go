@@ -31,21 +31,23 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 	}
 
 	log.Printf("Loading viewers from database...")
-	rows, err := db.Query("SELECT id, username FROM viewers WHERE channel=$1", channel)
+	rows, err := db.Query(`SELECT v.id, v.username, c.count FROM (SELECT id, username FROM viewers WHERE channel=$1) as v `+
+		// `JOIN brawlwins as b on b.viewer_id=v.id `+
+		`JOIN counts as c on c.viewer_id=v.id and type='money'`, channel)
 	if err != nil {
 		log.Printf("couldn't read viewers")
 	}
 	for rows.Next() {
-		var id int
+		var id, money int
 		var username string
-		rows.Scan(&id, &username)
+		rows.Scan(&id, &username, &money)
 		manager.viewers[username] = &Viewer{
 			id:         id,
 			updated:    false,
 			manager:    &manager,
 			Username:   username,
 			linesTyped: -1,
-			money:      -1,
+			money:      money,
 			brawlsWon:  nil,
 		}
 	}
@@ -57,6 +59,12 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 		v.GetBrawlsWon()
 	}
 	log.Printf("Done retrieving brawl stats")
+
+	// log.Printf("Retrieving money...")
+	// for _, v := range manager.viewers {
+	// 	v.GetMoney()
+	// }
+	// log.Printf("Done retrieving money")
 
 	return &manager
 }

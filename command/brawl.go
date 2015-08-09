@@ -22,7 +22,7 @@ type brawl struct {
 	statComm         *subCommand
 
 	season   int
-	brawlers map[string]int
+	brawlers map[string]string
 	active   bool
 }
 
@@ -34,7 +34,8 @@ func (T *brawl) Init() {
 	}
 	log.Printf("The current brawl season is %d", T.season)
 
-	T.brawlers = map[string]int{}
+	// username to weapon mapping
+	T.brawlers = map[string]string{}
 
 	T.brawlComm = &subCommand{
 		command:   "!brawl",
@@ -82,13 +83,9 @@ func (T *brawl) endBrawl() {
 
 	users := []string{}
 
-	for k, v := range T.brawlers {
-		for i := 0; i < v; i++ {
-			users = append(users, k)
-		}
+	for k := range T.brawlers {
+		users = append(users, k)
 	}
-
-	T.brawlers = map[string]int{}
 
 	if len(users) <= 0 {
 		return
@@ -97,6 +94,9 @@ func (T *brawl) endBrawl() {
 	if len(users) == 1 {
 		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
 		return
+	} else if len(users) < 5 {
+		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
+		return
 	}
 
 	winner := users[rand.Intn(len(users))]
@@ -104,10 +104,23 @@ func (T *brawl) endBrawl() {
 	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && rand.Intn(10) == 1 {
 		winner = T.cp.channel.GetChannelName()
 	}
+	weapon := T.brawlers[winner]
 
-	message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 100 %ss from the losers.", winner, T.cp.channel.Currency)
+	T.brawlers = map[string]string{}
 
-	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
+	if len(weapon) > 0 {
+		var message string
+		// SO LAZY OMG
+		if weapon[:1] == "a" || weapon[:1] == "o" || weapon[:1] == "e" || weapon[:1] == "i" || weapon[:1] == "u" {
+			message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with an %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		} else {
+			message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with a %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		}
+		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
+	} else {
+		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 500 %ss from the losers.", winner, T.cp.channel.Currency)
+		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
+	}
 
 	winningUser, in := T.cp.channel.InChannel(winner)
 	if in {
@@ -129,7 +142,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("A brawl has started in Twitch Chat! Type !pileon to join the fight! Everyone, get in here!"))
+	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
 }
 
 func (T *brawl) Response(username, message string) string {
@@ -149,14 +162,19 @@ func (T *brawl) Response(username, message string) string {
 		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
 	}
 
-	_, err = T.pileComm.parse(message, clearance)
+	args, err := T.pileComm.parse(message, clearance)
 	if err == nil && T.active == true {
 		_, in := T.cp.channel.InChannel(username)
 		if !in {
 			return ""
 		}
 
-		T.brawlers[username] = 1
+		if len(args) > 0 {
+			T.brawlers[username] = args[0]
+		} else {
+			T.brawlers[username] = ""
+		}
+
 		return ""
 	}
 
@@ -173,7 +191,7 @@ func (T *brawl) Response(username, message string) string {
 		}
 	}
 
-	args, err := T.statsComm.parse(message, clearance)
+	args, err = T.statsComm.parse(message, clearance)
 	if err == nil {
 		season, _ := strconv.Atoi(args[0])
 		return T.calculateBrawlStats(season)
