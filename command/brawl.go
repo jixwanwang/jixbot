@@ -99,9 +99,10 @@ func (T *brawl) endBrawl() {
 		return
 	}
 
-	winner := users[rand.Intn(len(users))]
-	// 10% chance of broadcaster winning brawl if they join
-	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && rand.Intn(10) == 1 {
+	winnerIndex := rand.Intn(len(users))
+	winner := users[winnerIndex]
+	// Broadcaster has higher chance of winning if they piled on
+	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && winnerIndex < 2 {
 		winner = T.cp.channel.GetChannelName()
 	}
 	weapon := T.brawlers[winner]
@@ -110,12 +111,12 @@ func (T *brawl) endBrawl() {
 
 	if len(weapon) > 0 {
 		var message string
-		// SO LAZY OMG
-		if weapon[:1] == "a" || weapon[:1] == "o" || weapon[:1] == "e" || weapon[:1] == "i" || weapon[:1] == "u" {
-			message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with an %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
-		} else {
-			message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with a %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
-		}
+		// // SO LAZY OMG
+		// if weapon[:1] == "a" || weapon[:1] == "o" || weapon[:1] == "e" || weapon[:1] == "i" || weapon[:1] == "u" {
+		// 	message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		// } else {
+		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		// }
 		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
 	} else {
 		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 500 %ss from the losers.", winner, T.cp.channel.Currency)
