@@ -114,7 +114,7 @@ type subCommand struct {
 func (C *subCommand) parse(message string, clearance channel.Level) ([]string, error) {
 	args := []string{}
 
-	if strings.Index(message, C.command) >= 0 {
+	if strings.Index(strings.ToLower(message), C.command) >= 0 {
 		log.Printf("%s called with clearance %s", C.command, clearance)
 	}
 

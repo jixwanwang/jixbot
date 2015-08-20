@@ -63,9 +63,11 @@ func (C *CommandPool) GetActiveCommands() []string {
 
 func (C *CommandPool) GetResponse(username, message string) string {
 	for _, c := range C.specials {
-		res := c.Response(username, message)
-		if len(res) > 0 {
-			return res
+		if !c.WhisperOnly() {
+			res := c.Response(username, message)
+			if len(res) > 0 {
+				return res
+			}
 		}
 	}
 	for _, c := range C.globalcommands {

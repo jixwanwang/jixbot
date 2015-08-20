@@ -54,7 +54,7 @@ func (T *money) Response(username, message string) string {
 			return ""
 		}
 
-		to_viewer, ok := T.cp.channel.InChannel(args[0])
+		to_viewer, ok := T.cp.channel.InChannel(strings.ToLower(args[0]))
 		if !ok {
 			T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, "That user isn't in the chat.")
 			return ""

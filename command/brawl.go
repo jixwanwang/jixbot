@@ -146,7 +146,7 @@ func (T *brawl) startBrawl() {
 }
 
 func (T *brawl) Response(username, message string) string {
-	message = strings.TrimSpace(strings.ToLower(message))
+	message = strings.TrimSpace(message)
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.brawlComm.parse(message, clearance)
@@ -157,6 +157,8 @@ func (T *brawl) Response(username, message string) string {
 
 	_, err = T.newSeasonComm.parse(message, clearance)
 	if err == nil && T.active == false {
+		topOfSeason := T.calculateBrawlStats(T.season)
+		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), topOfSeason)
 		T.season = T.season + 1
 		// TODO: add top winners of the season
 		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
