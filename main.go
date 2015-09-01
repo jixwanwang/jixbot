@@ -2,14 +2,15 @@ package main
 
 import (
 	"log"
+	"net"
+	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"sync"
 
+	"github.com/jixwanwang/jixbot/api"
 	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/messaging"
-	"github.com/jixwanwang/jixbot/stream_bot"
+	"github.com/zenazn/goji/graceful"
 )
 
 const ()
@@ -39,32 +40,57 @@ func main() {
 
 	texter := messaging.NewTexter(twilioAccount, twilioSecret, twilioNumber, myNumber)
 
-	bots := []*stream_bot.Bot{}
-	for _, channel := range channels {
-		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
-
-		if err != nil {
-			log.Fatalf("Failed to create client for %s: %s", channel, err.Error())
-		}
-		bots = append(bots, b)
-		go b.Start()
+	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, db)
+	if err != nil {
+		log.Fatalf(err.Error())
 	}
 
-	quit := make(chan os.Signal, 1)
+	http.Handle("/", mux)
 
-	signal.Notify(quit, os.Interrupt, os.Kill)
+	graceful.HandleSignals()
+	graceful.PreHook(api.Close)
 
-	go func() {
-		<-quit
-		log.Printf("quitting")
-		for _, b := range bots {
-			b.Shutdown()
-		}
-		os.Exit(0)
-	}()
+	addr := ":8080"
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("[handler] Failed to bind to %s: %s", addr, err)
+	}
+	log.Printf("[handler] Listening on %s", addr)
 
-	// Never finish
-	var wg sync.WaitGroup
-	wg.Add(1)
-	wg.Wait()
+	err = graceful.Serve(l, http.DefaultServeMux)
+	if err != nil {
+		log.Fatalf("[handler] %s", err)
+	}
+	log.Printf("[handler] Draining server")
+	graceful.Wait()
+	log.Printf("[handler] Draining complete")
+
+	// bots := []*stream_bot.Bot{}
+	// for _, channel := range channels {
+	// 	b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
+
+	// 	if err != nil {
+	// 		log.Fatalf("Failed to create client for %s: %s", channel, err.Error())
+	// 	}
+	// 	bots = append(bots, b)
+	// 	go b.Start()
+	// }
+
+	// quit := make(chan os.Signal, 1)
+
+	// signal.Notify(quit, os.Interrupt, os.Kill)
+
+	// go func() {
+	// 	<-quit
+	// 	log.Printf("quitting")
+	// 	for _, b := range bots {
+	// 		b.Shutdown()
+	// 	}
+	// 	os.Exit(0)
+	// }()
+
+	// // Never finish
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// wg.Wait()
 }

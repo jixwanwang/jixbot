@@ -146,29 +146,3 @@ func (C *Client) ReadLoop() chan Event {
 
 	return events
 }
-
-// func (C *Client) ReadEvent() (Event, error) {
-// 	t := time.Now()
-// 	t = t.Add(1 * time.Minute)
-
-// 	C.socket.SetReadDeadline(t)
-
-// 	msg, err := C.br.ReadString('\n')
-// 	if err != nil {
-// 		return Event{}, err
-// 	}
-
-// 	space := strings.Index(msg, " ")
-// 	from := msg[:space]
-
-// 	msg = msg[space+1:]
-// 	space = strings.Index(msg, " ")
-// 	if space == -1 {
-// 		return Event{from, msg, ""}, nil
-// 	}
-// 	kind := msg[:space]
-
-// 	message := strings.TrimSpace(msg[space:])
-
-// 	return Event{from, kind, message}, nil
-// }

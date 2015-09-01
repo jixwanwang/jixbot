@@ -66,6 +66,10 @@ func (B *Bot) GetActiveCommands() []string {
 	return B.commands.GetActiveCommands()
 }
 
+func (B *Bot) AddActiveCommand(c string) {
+	B.commands.ActivateCommand(c)
+}
+
 func (B *Bot) startup() {
 	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
