@@ -115,7 +115,7 @@ func (T *brawl) endBrawl() {
 		// if weapon[:1] == "a" || weapon[:1] == "o" || weapon[:1] == "e" || weapon[:1] == "i" || weapon[:1] == "u" {
 		// 	message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
 		// } else {
-		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
 		// }
 		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
 	} else {

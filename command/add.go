@@ -44,7 +44,7 @@ func (T *addCommand) Response(username, message string) string {
 	var comm *textCommand
 
 	args, err := T.plebComm.parse(message, clearance)
-	if err == nil && args[0][:1] == "!" {
+	if err == nil && len(args) > 1 && args[0][:1] == "!" {
 		comm = &textCommand{
 			clearance: channel.VIEWER,
 			command:   strings.ToLower(args[0]),
@@ -53,7 +53,7 @@ func (T *addCommand) Response(username, message string) string {
 	}
 
 	args, err = T.modComm.parse(message, clearance)
-	if err == nil && args[0][:1] == "!" {
+	if err == nil && len(args) > 1 && args[0][:1] == "!" {
 		comm = &textCommand{
 			clearance: channel.MOD,
 			command:   strings.ToLower(args[0]),

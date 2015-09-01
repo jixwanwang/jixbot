@@ -8,8 +8,6 @@ import (
 
 const urlBase = "https://api.twilio.com/2010-04-01"
 
-// const urlBase = "http://requestb.in/1ijp55g1"
-
 type Texter struct {
 	account  string
 	password string
@@ -28,6 +26,7 @@ func NewTexter(account, password, number, toNumber string) Texter {
 		account:  account,
 		password: password,
 		number:   number,
+		toNumber: toNumber,
 	}
 }
 
@@ -37,7 +36,7 @@ func (T Texter) SendText(body string) {
 	opts.Set("Body", body)
 	opts.Set("From", T.number)
 
-	req, _ := http.NewRequest("POST", urlBase+"/Accounts/"+T.account+"/Messages.json", strings.NewReader(opts.Encode()))
+	req, _ := http.NewRequest("POST", urlBase+"/Accounts/"+T.account+"/Messages", strings.NewReader(opts.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(T.account, T.password)
 
