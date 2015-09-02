@@ -124,6 +124,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&fail{
 			cp: C,
 		},
+		&combo{
+			cp: C,
+		},
 	}
 }
 

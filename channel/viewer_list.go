@@ -12,10 +12,14 @@ type Level int
 
 const (
 	VIEWER      Level = 0
-	MOD         Level = 1
-	STAFF       Level = 2
-	BROADCASTER Level = 3
-	GOD         Level = 4
+	TURBO       Level = 1
+	FOLLOWER    Level = 2
+	SUBSCRIBER  Level = 4
+	MOD         Level = 6
+	ADMIN       Level = 7
+	STAFF       Level = 9
+	BROADCASTER Level = 10
+	GOD         Level = 12
 )
 
 func init() {
@@ -31,9 +35,10 @@ type ViewerList struct {
 	lotteryContributers map[string]int
 
 	// Other properties
-	Currency string
-	SubName  string
-	Emotes   []string
+	Currency     string
+	SubName      string
+	ComboTrigger string
+	Emotes       []string
 }
 
 func NewViewerList(channel string, db *sql.DB) *ViewerList {
@@ -46,9 +51,11 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 		lotteryContributers: map[string]int{},
 	}
 
+	// TODO: should be in channel class, not in viewlist class
 	rows, err := db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
 	viewers.Currency = "Coin"
 	viewers.SubName = "subscribers"
+	viewers.ComboTrigger = "PogChamp"
 	if err != nil {
 		log.Printf("couldn't get channel_properties %s", err.Error())
 	}
@@ -60,6 +67,9 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 		}
 		if k == "subname" {
 			viewers.SubName = v
+		}
+		if k == "combo_trigger" {
+			viewers.ComboTrigger = v
 		}
 	}
 	rows.Close()
