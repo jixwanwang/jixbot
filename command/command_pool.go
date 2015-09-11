@@ -158,6 +158,10 @@ func (C *CommandPool) ActivateCommand(command string) {
 	C.db.Exec("INSERT INTO commands (channel, command) VALUES ($1, $2)", C.channel.GetChannelName(), command)
 }
 
+func (C *CommandPool) DeleteCommand(command string) {
+	C.db.Exec("DELETE FROM commands WHERE channel=$1 AND command=$2", C.channel.GetChannelName(), command)
+}
+
 func (C *CommandPool) GetResponse(username, message string) string {
 	for _, c := range C.specials {
 		if _, ok := C.enabled[c.ID()]; ok {

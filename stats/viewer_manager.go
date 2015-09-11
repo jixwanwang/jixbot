@@ -21,9 +21,6 @@ type ViewerManager struct {
 }
 
 func Init(channel string, db *sql.DB) *ViewerManager {
-	// TODO: preload all the viewers whose data is already stored
-	// os.MkdirAll(statsFilePath+channel, 0755)
-
 	manager := ViewerManager{
 		channel: channel,
 		viewers: map[string]*Viewer{},
@@ -54,17 +51,21 @@ func Init(channel string, db *sql.DB) *ViewerManager {
 	rows.Close()
 	log.Printf("Done loading viewers")
 
-	log.Printf("Retrieving brawl stats...")
-	for _, v := range manager.viewers {
-		v.GetBrawlsWon()
-	}
-	log.Printf("Done retrieving brawl stats")
+	go func() {
+		log.Printf("Retrieving brawl stats...")
+		for _, v := range manager.viewers {
+			v.GetBrawlsWon()
+		}
+		log.Printf("Done retrieving brawl stats")
+	}()
 
-	// log.Printf("Retrieving money...")
-	// for _, v := range manager.viewers {
-	// 	v.GetMoney()
-	// }
-	// log.Printf("Done retrieving money")
+	go func() {
+		log.Printf("Retrieving money...")
+		for _, v := range manager.viewers {
+			v.GetMoney()
+		}
+		log.Printf("Done retrieving money")
+	}()
 
 	return &manager
 }

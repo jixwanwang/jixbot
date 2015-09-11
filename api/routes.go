@@ -2,9 +2,7 @@ package api
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
-	"strings"
 
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/stream_bot"
@@ -42,13 +40,21 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 
 	mux := web.New()
 
-	mux.Put("/create/:channel", api.newChannelBot)
+	// Channel modification
+	mux.Post("/channels/:channel", api.newChannelBot)
+	// mux.Get("/channels", api.getChannels)
+	// mux.Get("/channels/:channel", api.getChannelInfo)
+	// mux.Put("/channels/:channel", api.addChannelProperties)
+
+	// Command modification
+	mux.Get("/commands/:channel", api.getCommands)
+	mux.Put("/commands/:channel", api.addCommands)
+	mux.Delete("/commands/:channel", api.deleteCommands)
+
+	// Emote modification
 	// mux.Get("/emotes/:channel", api.getEmotes)
 	// mux.Put("/emotes/:channel", api.addEmotes)
 	// mux.Delete("/emotes/:channel", api.deleteEmotes)
-	mux.Get("/commands/:channel", api.getCommands)
-	mux.Put("/commands/:channel", api.addCommands)
-	// mux.Delete("/commands/:channel", api.deleteCommands)
 
 	return mux, api, nil
 }
@@ -62,42 +68,6 @@ func (T *API) Close() {
 func serveError(w http.ResponseWriter, err error) {
 	w.Write([]byte(err.Error()))
 	w.WriteHeader(http.StatusInternalServerError)
-}
-
-func (T *API) getCommands(C web.C, w http.ResponseWriter, r *http.Request) {
-	channel := C.URLParams["channel"]
-
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	r.ParseForm()
-
-	comms := bot.GetActiveCommands()
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strings.Join(comms, ", ")))
-}
-
-func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
-	channel := C.URLParams["channel"]
-
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	r.ParseForm()
-	commands := strings.Split(r.FormValue("commands"), ",")
-	log.Printf("adding %s to commands for %s", commands, channel)
-	for _, c := range commands {
-		bot.AddActiveCommand(c)
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (T *API) newChannelBot(C web.C, w http.ResponseWriter, r *http.Request) {
