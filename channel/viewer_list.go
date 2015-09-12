@@ -29,6 +29,7 @@ func init() {
 type ViewerList struct {
 	channel             string
 	db                  *stats.ViewerManager
+	realDB              *sql.DB
 	viewers             map[string]*stats.Viewer
 	staff               map[string]int
 	mods                map[string]int
@@ -43,8 +44,10 @@ type ViewerList struct {
 
 func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	viewers := &ViewerList{
-		channel:             channel,
+		channel: channel,
+		// TODO: this is bad, this class should be the viewer_manager
 		db:                  stats.Init(channel, db),
+		realDB:              db,
 		viewers:             map[string]*stats.Viewer{},
 		staff:               map[string]int{},
 		mods:                map[string]int{},
@@ -62,15 +65,7 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	for rows.Next() {
 		var k, v string
 		rows.Scan(&k, &v)
-		if k == "currency" {
-			viewers.Currency = v
-		}
-		if k == "subname" {
-			viewers.SubName = v
-		}
-		if k == "combo_trigger" {
-			viewers.ComboTrigger = v
-		}
+		viewers.SetProperty(k, v)
 	}
 	rows.Close()
 
@@ -101,6 +96,28 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	}()
 
 	return viewers
+}
+
+func (V *ViewerList) SetProperty(k, v string) {
+	if k == "currency" {
+		V.Currency = v
+	}
+	if k == "subname" {
+		V.SubName = v
+	}
+	if k == "combo_trigger" {
+		V.ComboTrigger = v
+	}
+}
+
+func (V *ViewerList) AddEmote(e string) {
+	for _, emote := range V.Emotes {
+		if e == emote {
+			return
+		}
+	}
+	V.Emotes = append(V.Emotes, e)
+	V.realDB.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", V.channel, e)
 }
 
 func (V *ViewerList) GetChannelName() string {

@@ -161,7 +161,6 @@ func (T *brawl) Response(username, message string) string {
 		topOfSeason := T.calculateBrawlStats(T.season)
 		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), topOfSeason)
 		T.season = T.season + 1
-		// TODO: add top winners of the season
 		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
 	}
 

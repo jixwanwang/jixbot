@@ -74,6 +74,18 @@ func (B *Bot) DeleteCommand(c string) {
 	B.commands.DeleteCommand(c)
 }
 
+func (B *Bot) GetEmotes() []string {
+	return B.viewerlist.Emotes
+}
+
+func (B *Bot) AddEmote(e string) {
+	B.viewerlist.AddEmote(e)
+}
+
+func (B *Bot) SetProperty(k, v string) {
+	B.viewerlist.SetProperty(k, v)
+}
+
 func (B *Bot) startup() {
 	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
@@ -114,7 +126,6 @@ func (B *Bot) Start() {
 			return
 		case e := <-reads:
 			if e.Err != nil {
-				// TODO: flush commands, reload everything
 				log.Printf("Error %s, reloading irc client", e.Err.Error())
 				B.reloadClients()
 				B.viewerlist.Flush()
@@ -177,7 +188,6 @@ func (B *Bot) Start() {
 			}
 		case e := <-groupreads:
 			if e.Err != nil {
-				// TODO: flush commands, reload everything
 				log.Printf("Error %s, reloading irc client", e.Err.Error())
 				B.reloadClients()
 				continue

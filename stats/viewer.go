@@ -121,7 +121,6 @@ func (V *Viewer) save() {
 		V.id = id
 		log.Printf("created new viewer with id %d, username %s", V.id, V.Username)
 	}
-	// TODO: write brawls, money, lines typed to db
 	if V.brawlsWon != nil {
 		for season, wins := range V.brawlsWon {
 			insert := "INSERT INTO brawlwins (season, viewer_id, wins, channel) SELECT $1, $2, $3, $4"

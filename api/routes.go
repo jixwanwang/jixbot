@@ -44,7 +44,9 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 	mux.Post("/channels/:channel", api.newChannelBot)
 	// mux.Get("/channels", api.getChannels)
 	// mux.Get("/channels/:channel", api.getChannelInfo)
-	// mux.Put("/channels/:channel", api.addChannelProperties)
+
+	// Channel properties
+	mux.Put("/channels/properties/:channel", api.setProperty)
 
 	// Command modification
 	mux.Get("/commands/:channel", api.getCommands)
@@ -52,8 +54,8 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 	mux.Delete("/commands/:channel", api.deleteCommands)
 
 	// Emote modification
-	// mux.Get("/emotes/:channel", api.getEmotes)
-	// mux.Put("/emotes/:channel", api.addEmotes)
+	mux.Get("/emotes/:channel", api.getEmotes)
+	mux.Put("/emotes/:channel", api.addEmotes)
 	// mux.Delete("/emotes/:channel", api.deleteEmotes)
 
 	return mux, api, nil

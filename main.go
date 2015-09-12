@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/jixwanwang/jixbot/api"
 	"github.com/jixwanwang/jixbot/db"
@@ -31,14 +30,26 @@ func main() {
 	password := os.Getenv("DB_PASS")
 	groupchat := os.Getenv("GROUPCHAT")
 
-	channels := strings.Split(os.Getenv("CHANNELS"), ",")
-
 	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
 		log.Fatalf("Failed to create db: %s", err.Error())
 	}
 
 	texter := messaging.NewTexter(twilioAccount, twilioSecret, twilioNumber, myNumber)
+
+	channels := []string{}
+	rows, err := db.Query("SELECT DISTINCT(channel) FROM commands")
+	if err != nil {
+		log.Fatalf("Failed to get channel list. %s", err.Error())
+	}
+	for rows.Next() {
+		var channel string
+		err := rows.Scan(&channel)
+		if err == nil {
+			channels = append(channels, channel)
+		}
+	}
+	log.Printf("%v", channels)
 
 	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, db)
 	if err != nil {
@@ -64,33 +75,4 @@ func main() {
 	log.Printf("[handler] Draining server")
 	graceful.Wait()
 	log.Printf("[handler] Draining complete")
-
-	// bots := []*stream_bot.Bot{}
-	// for _, channel := range channels {
-	// 	b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
-
-	// 	if err != nil {
-	// 		log.Fatalf("Failed to create client for %s: %s", channel, err.Error())
-	// 	}
-	// 	bots = append(bots, b)
-	// 	go b.Start()
-	// }
-
-	// quit := make(chan os.Signal, 1)
-
-	// signal.Notify(quit, os.Interrupt, os.Kill)
-
-	// go func() {
-	// 	<-quit
-	// 	log.Printf("quitting")
-	// 	for _, b := range bots {
-	// 		b.Shutdown()
-	// 	}
-	// 	os.Exit(0)
-	// }()
-
-	// // Never finish
-	// var wg sync.WaitGroup
-	// wg.Add(1)
-	// wg.Wait()
 }
