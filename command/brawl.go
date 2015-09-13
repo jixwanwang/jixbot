@@ -15,6 +15,7 @@ import (
 type brawl struct {
 	cp               *CommandPool
 	brawlComm        *subCommand
+	seasonComm       *subCommand
 	newSeasonComm    *subCommand
 	pileComm         *subCommand
 	statsComm        *subCommand
@@ -42,6 +43,13 @@ func (T *brawl) Init() {
 		numArgs:   0,
 		cooldown:  15 * time.Minute,
 		clearance: channel.MOD,
+	}
+
+	T.seasonComm = &subCommand{
+		command:   "!brawlseason",
+		numArgs:   0,
+		cooldown:  15 * time.Second,
+		clearance: channel.VIEWER,
 	}
 
 	T.newSeasonComm = &subCommand{
@@ -154,6 +162,11 @@ func (T *brawl) Response(username, message string) string {
 	if err == nil && T.active == false {
 		T.startBrawl()
 		return ""
+	}
+
+	_, err = T.seasonComm.parse(message, clearance)
+	if err == nil {
+		return fmt.Sprintf("The current brawl season is %d", T.season)
 	}
 
 	_, err = T.newSeasonComm.parse(message, clearance)

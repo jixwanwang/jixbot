@@ -24,7 +24,7 @@ func (T *combo) ID() string {
 }
 
 func (T *combo) Response(username, message string) string {
-	// TODO: make sub only
+	// TODO: make sub only maybe?
 	if index := strings.Index(message, T.cp.channel.ComboTrigger); index >= 0 {
 		if !T.active {
 			if time.Since(T.lastCombo).Minutes() > 3 {
@@ -37,13 +37,25 @@ func (T *combo) Response(username, message string) string {
 			if _, ok := T.comboers[username]; !ok {
 				T.comboers[username] = true
 				T.lastCombo = time.Now()
-				if len(T.comboers)%5 == 0 {
-					return fmt.Sprintf("%s %s %d COMBO %s %s",
+				if len(T.comboers) == 5 {
+					return fmt.Sprintf("%s The combo begins! Type %s to keep the combo going and get 100 %ss!",
 						T.cp.channel.ComboTrigger,
 						T.cp.channel.ComboTrigger,
+						T.cp.channel.Currency)
+				}
+				if len(T.comboers)%10 == 0 {
+					numCombo := len(T.comboers) / 10
+					if numCombo > 5 {
+						numCombo = 5
+					}
+					comboSpam := ""
+					for i := 0; i < numCombo; i++ {
+						comboSpam = comboSpam + T.cp.channel.ComboTrigger + " "
+					}
+					return fmt.Sprintf("%s %d COMBO %s",
+						comboSpam,
 						len(T.comboers),
-						T.cp.channel.ComboTrigger,
-						T.cp.channel.ComboTrigger)
+						comboSpam)
 				}
 			}
 		} else {
@@ -51,10 +63,14 @@ func (T *combo) Response(username, message string) string {
 			if len(T.comboers) < 5 {
 				T.comboers = map[string]bool{}
 				T.comboers[username] = true
+				viewer, in := T.cp.channel.InChannel(username)
+				if in {
+					viewer.AddMoney(100)
+				}
 				return ""
 			} else {
 				T.active = false
-				return fmt.Sprintf("%s C-C-C-C-COMBO BREAKER", T.cp.channel.ComboTrigger)
+				return fmt.Sprintf("%s C-C-C-C-COMBO BREAKER (%d combo achieved!)", T.cp.channel.ComboTrigger, len(T.comboers))
 			}
 		}
 	}
