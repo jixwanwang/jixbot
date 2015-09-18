@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"time"
-
-	"github.com/jixwanwang/jixbot/stats"
 )
 
 type Level int
@@ -28,9 +26,8 @@ func init() {
 
 type ViewerList struct {
 	channel             string
-	db                  *stats.ViewerManager
-	realDB              *sql.DB
-	viewers             map[string]*stats.Viewer
+	db                  *sql.DB
+	viewers             map[string]*Viewer
 	staff               map[string]int
 	mods                map[string]int
 	lotteryContributers map[string]int
@@ -44,11 +41,9 @@ type ViewerList struct {
 
 func NewViewerList(channel string, db *sql.DB) *ViewerList {
 	viewers := &ViewerList{
-		channel: channel,
-		// TODO: this is bad, this class should be the viewer_manager
-		db:                  stats.Init(channel, db),
-		realDB:              db,
-		viewers:             map[string]*stats.Viewer{},
+		channel:             channel,
+		db:                  db,
+		viewers:             map[string]*Viewer{},
 		staff:               map[string]int{},
 		mods:                map[string]int{},
 		lotteryContributers: map[string]int{},
@@ -91,7 +86,7 @@ func NewViewerList(channel string, db *sql.DB) *ViewerList {
 		for {
 			<-ticker.C
 			log.Printf("Saving EVERYTHING")
-			viewers.db.Flush()
+			viewers.Flush()
 		}
 	}()
 
@@ -117,7 +112,7 @@ func (V *ViewerList) AddEmote(e string) {
 		}
 	}
 	V.Emotes = append(V.Emotes, e)
-	V.realDB.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", V.channel, e)
+	V.db.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", V.channel, e)
 }
 
 func (V *ViewerList) GetChannelName() string {
@@ -126,7 +121,20 @@ func (V *ViewerList) GetChannelName() string {
 
 func (V *ViewerList) AddViewer(username string) {
 	if _, ok := V.viewers[username]; !ok {
-		V.viewers[username] = V.db.FindViewer(username)
+		v := V.FindViewer(username)
+		if v == nil {
+			// Create user if they don't exist
+			v = &Viewer{
+				id:         -1,
+				Username:   username,
+				updated:    true,
+				linesTyped: -1,
+				money:      -1,
+				brawlsWon:  nil,
+				manager:    V,
+			}
+		}
+		V.viewers[username] = v
 	}
 }
 
@@ -152,13 +160,38 @@ func (V *ViewerList) RemoveMod(username string) {
 	delete(V.mods, username)
 }
 
-func (V *ViewerList) InChannel(username string) (*stats.Viewer, bool) {
+func (V *ViewerList) InChannel(username string) (*Viewer, bool) {
 	v, ok := V.viewers[username]
 	return v, ok
 }
 
-func (V *ViewerList) AllViewers() []*stats.Viewer {
-	return V.db.AllViewers()
+func (V *ViewerList) FindViewer(username string) *Viewer {
+	row := V.db.QueryRow(`SELECT v.id, c.count FROM (SELECT id, username FROM viewers WHERE channel=$1 AND username=$2) as v `+
+		`JOIN counts as c on c.viewer_id=v.id and type='money'`, V.channel, username)
+
+	var id, money int
+	err := row.Scan(&id, &money)
+	if err == nil {
+		return &Viewer{
+			id:         id,
+			updated:    false,
+			Username:   username,
+			linesTyped: -1,
+			money:      money,
+			brawlsWon:  nil,
+			manager:    V,
+		}
+	} else {
+		return nil
+	}
+}
+
+func (V *ViewerList) AllViewers() []*Viewer {
+	viewers := []*Viewer{}
+	for _, v := range V.viewers {
+		viewers = append(viewers, v)
+	}
+	return viewers
 }
 
 func (V *ViewerList) GetLevel(username string) Level {
@@ -192,9 +225,13 @@ func (V *ViewerList) Tick() {
 
 func (V *ViewerList) Flush() {
 	log.Printf("Flushing viewerlist")
-	V.db.Flush()
+	for _, v := range V.viewers {
+		if v.updated {
+			v.save()
+		}
+	}
 }
 
 func (V *ViewerList) Close() {
-	V.db.Flush()
+	V.Flush()
 }

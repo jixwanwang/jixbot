@@ -1,10 +1,10 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -239,24 +239,43 @@ func (V *viewerBrawlerInterface) Swap(i, j int) {
 }
 
 func (T *brawl) calculateBrawlStats(season int) string {
-	brawlWins := []brawlWin{}
+	output := ""
+	var rows *sql.Rows
+	var err error
+	if season > 0 {
+		output = output + fmt.Sprintf("Best brawlers for season %d: ", season)
+		rows, err = T.cp.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
+			`JOIN viewers AS v ON v.id=b.viewer_id `+
+			`WHERE b.channel=$1 AND b.season=$2 `+
+			`GROUP BY username ORDER BY totalwins DESC`, T.cp.channel.GetChannelName(), season)
+	} else {
+		output = output + "All-time best brawlers: "
+		rows, err = T.cp.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
+			`JOIN viewers AS v ON v.id=b.viewer_id `+
+			`WHERE b.channel=$1 `+
+			`GROUP BY username ORDER BY totalwins DESC`, T.cp.channel.GetChannelName())
+	}
+	if err != nil {
+		return ""
+	}
 
+	brawlWins := []brawlWin{}
 	foundWinner := false
-	for _, u := range T.cp.channel.AllViewers() {
-		wins := 0
-		if season > 0 {
-			w, ok := u.GetBrawlsWon()[season]
-			if ok {
-				wins = w
-			}
-		} else {
-			wins = u.GetTotalBrawlsWon()
+	var username string
+	var wins int
+	for rows.Next() {
+		err := rows.Scan(&wins, &username)
+		log.Printf("%d, %s", wins, username)
+		if err != nil {
+			continue
 		}
+
 		if wins > 0 {
 			foundWinner = true
 		}
+
 		brawlWins = append(brawlWins, brawlWin{
-			username: u.Username,
+			username: username,
 			wins:     wins,
 		})
 	}
@@ -265,22 +284,10 @@ func (T *brawl) calculateBrawlStats(season int) string {
 		return fmt.Sprintf("No one has won for season %d yet!", season)
 	}
 
-	sorter := &viewerBrawlerInterface{
-		viewers: brawlWins,
-	}
-	sort.Sort(sorter)
-
-	winners := []brawlWin{}
 	tiedWinners := []brawlWin{}
 	numWins := 10000
 	count := -1
-	output := ""
-	if season > 0 {
-		output = output + fmt.Sprintf("Best brawlers for season %d: ", season)
-	} else {
-		output = output + "All-time best brawlers: "
-	}
-	for _, w := range sorter.viewers {
+	for _, w := range brawlWins {
 		if w.wins < numWins {
 			if len(tiedWinners) != 0 {
 				for _, winner := range tiedWinners {
@@ -289,18 +296,26 @@ func (T *brawl) calculateBrawlStats(season int) string {
 				output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
 			}
 
-			winners = append(winners, tiedWinners...)
 			tiedWinners = []brawlWin{}
 			numWins = w.wins
 			count = count + 1
 		}
-		if w.wins == numWins {
-			tiedWinners = append(tiedWinners, w)
-		}
+
 		// Don't display 0 wins, only keep top 5 win groups, and ignore groups with more than 7 people in it.
 		if numWins == 0 || count > 4 || len(tiedWinners) > 7 {
 			break
 		}
+
+		if w.wins == numWins {
+			tiedWinners = append(tiedWinners, w)
+		}
+	}
+
+	if len(tiedWinners) != 0 && len(tiedWinners) <= 7 {
+		for _, winner := range tiedWinners {
+			output = fmt.Sprintf("%s%s & ", output, winner.username)
+		}
+		output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
 	}
 
 	return output[:len(output)-2]

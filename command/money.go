@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"sort"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -101,24 +101,22 @@ func (V *moneySortInterface) Swap(i, j int) {
 }
 
 func (T *money) calculateRichest() string {
-	viewers := T.cp.channel.AllViewers()
-
-	sorter := &moneySortInterface{viewers: []stats.Viewer{}}
-	for _, u := range viewers {
-		sorter.viewers = append(sorter.viewers, *u)
+	rows, err := T.cp.db.Query(`SELECT sum(c.count) money, v.username FROM counts AS c `+
+		`JOIN viewers AS v ON v.id = c.viewer_id `+
+		`WHERE c.type='money' AND v.channel=$1 `+
+		`GROUP BY v.username ORDER BY money DESC LIMIT 10`, T.cp.channel.GetChannelName())
+	if err != nil {
+		log.Printf("ERROR: %s", err.Error())
+		return ""
 	}
-	sort.Sort(sorter)
 
-	max := 10
-	if len(viewers) < max {
-		max = len(viewers)
-	}
-	richest := sorter.viewers[:max]
+	var viewer string
+	var money int
 	output := "Richest people: "
-	for _, u := range richest {
-		output = fmt.Sprintf("%s%s - %d %ss, ", output, u.Username, u.GetMoney(), T.cp.channel.Currency)
+	for rows.Next() {
+		rows.Scan(&money, &viewer)
+		output = fmt.Sprintf("%s%s - %d %ss, ", output, viewer, money, T.cp.channel.Currency)
 	}
-
 	return output[:len(output)-2]
 }
 
