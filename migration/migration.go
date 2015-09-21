@@ -22,8 +22,6 @@ type oldStruct struct {
 }
 
 func main() {
-	channels := strings.Split(os.Getenv("CHANNELS"), ",")
-
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	dbname := os.Getenv("DB_NAME")
@@ -33,6 +31,24 @@ func main() {
 	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
 		log.Printf("couldn't connect to db %s", err.Error())
+	}
+
+	channels := []string{}
+	rows, err := db.Query("SELECT DISTINCT(channel) FROM commands")
+	if err != nil {
+		log.Fatalf("Failed to get channel list. %s", err.Error())
+	}
+	for rows.Next() {
+		var channel string
+		err := rows.Scan(&channel)
+		if err == nil {
+			channels = append(channels, channel)
+		}
+	}
+	rows.Close()
+
+	for _, channel := range channels {
+		db.Query("SELECT c.count, c.viewer_id FROM counts AS c JOIN viewers AS v ON c.viewer_id=v.id AND c.type='money' AND v.channel=$1", channel)
 	}
 
 	for _, channel := range channels {

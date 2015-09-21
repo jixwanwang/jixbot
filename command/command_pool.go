@@ -10,12 +10,11 @@ import (
 )
 
 type CommandPool struct {
-	channel     *channel.ViewerList
-	irc         *irc.Client
-	ircW        *irc.Client
-	broadcaster *channel.Broadcaster
-	texter      messaging.Texter
-	db          *sql.DB
+	channel *channel.Channel
+	irc     *irc.Client
+	ircW    *irc.Client
+	texter  messaging.Texter
+	db      *sql.DB
 
 	specials       []Command
 	enabled        map[string]bool
@@ -23,14 +22,13 @@ type CommandPool struct {
 	globalcommands []*textCommand
 }
 
-func NewCommandPool(channel *channel.ViewerList, broadcaster *channel.Broadcaster, irc, ircW *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
+func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
 	cp := &CommandPool{
-		channel:     channel,
-		broadcaster: broadcaster,
-		irc:         irc,
-		ircW:        ircW,
-		db:          db,
-		texter:      texter,
+		channel: channel,
+		irc:     irc,
+		ircW:    ircW,
+		db:      db,
+		texter:  texter,
 	}
 
 	globals := cp.loadTextCommands(globalChannel)

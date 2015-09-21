@@ -117,6 +117,7 @@ func (T *money) calculateRichest() string {
 		rows.Scan(&money, &viewer)
 		output = fmt.Sprintf("%s%s - %d %ss, ", output, viewer, money, T.cp.channel.Currency)
 	}
+	rows.Close()
 	return output[:len(output)-2]
 }
 

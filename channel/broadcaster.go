@@ -3,7 +3,6 @@ package channel
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -13,35 +12,26 @@ const (
 )
 
 type Broadcaster struct {
-	Username    string
 	Online      bool
 	OnlineSince time.Time
 
+	username   string
 	lastOnline time.Time
 	tolerance  time.Duration
 }
 
 func NewBroadcaster(channel string) *Broadcaster {
 	b := &Broadcaster{
-		Username:  channel,
+		username:  channel,
 		tolerance: 1 * time.Minute,
 	}
-	ticker := time.NewTicker(30 * time.Second)
-	go func() {
-		for {
-			<-ticker.C
-			b.checkOnline()
-			log.Printf("%s %v %v", b.Username, b.Online, b.OnlineSince)
-		}
-	}()
-	b.checkOnline()
 
 	return b
 }
 
 // Tolerance for stream crashes
 func (B *Broadcaster) checkOnline() {
-	resp, err := http.Get(baseURL + "/" + B.Username)
+	resp, err := http.Get(baseURL + "/" + B.username)
 	// Don't change state if the request fails
 	if err != nil {
 		return

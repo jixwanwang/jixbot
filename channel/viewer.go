@@ -4,14 +4,16 @@ import "log"
 
 // Represents a viewer in a single stream.
 type Viewer struct {
-	id         int
-	updated    bool
-	Username   string      `json:"username"`
-	linesTyped int         `json:"lines_typed"`
-	money      int         `json:"money"`
-	brawlsWon  map[int]int `json:"brawls_won"`
+	Username string
 
+	id      int
+	updated bool
 	manager *ViewerList
+
+	linesTyped int
+	timeSpent  int
+	money      int
+	brawlsWon  map[int]int
 }
 
 func (V *Viewer) GetBrawlsWon() map[int]int {
@@ -86,6 +88,27 @@ func (V *Viewer) AddLineTyped() {
 	V.updated = true
 }
 
+func (V *Viewer) GetTimeSpent() int {
+	if V.timeSpent < 0 {
+		if V.id > 0 {
+			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='time' AND viewer_id=$1", V.id)
+
+			if err := row.Scan(&V.timeSpent); err != nil {
+				log.Printf("couldn't find time spent for viewer with id %d", V.id)
+				V.timeSpent = 0
+			}
+		} else {
+			V.timeSpent = 0
+		}
+	}
+	return V.timeSpent
+}
+
+func (V *Viewer) AddTimeSpent(minutes int) {
+	V.timeSpent = V.GetTimeSpent() + minutes
+	V.updated = true
+}
+
 func (V *Viewer) GetMoney() int {
 	if V.money < 0 {
 		if V.id > 0 {
@@ -111,35 +134,43 @@ func (V *Viewer) AddMoney(amount int) {
 }
 
 func (V *Viewer) save() {
-	if V.id == -1 {
-		// Write new user to db
-		V.manager.db.Exec("INSERT INTO viewers (username, channel) VALUES ($1, $2)", V.Username, V.manager.channel)
-		row := V.manager.db.QueryRow("SELECT id FROM viewers WHERE username=$1 AND channel=$2", V.Username, V.manager.channel)
-		var id int
-		if err := row.Scan(&id); err != nil {
-			log.Printf("failed to get id of new user: %s", err.Error())
+	if V.updated {
+		if V.id == -1 {
+			// Write new user to db
+			V.manager.db.Exec("INSERT INTO viewers (username, channel) VALUES ($1, $2)", V.Username, V.manager.channel)
+			row := V.manager.db.QueryRow("SELECT id FROM viewers WHERE username=$1 AND channel=$2", V.Username, V.manager.channel)
+			var id int
+			if err := row.Scan(&id); err != nil {
+				log.Printf("failed to get id of new user: %s", err.Error())
+			}
+			V.id = id
+			log.Printf("created new viewer with id %d, username %s", V.id, V.Username)
 		}
-		V.id = id
-		log.Printf("created new viewer with id %d, username %s", V.id, V.Username)
-	}
-	if V.brawlsWon != nil {
-		for season, wins := range V.brawlsWon {
-			insert := "INSERT INTO brawlwins (season, viewer_id, wins, channel) SELECT $1, $2, $3, $4"
-			upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2 AND channel=$4"
-			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins, V.manager.channel)
+		if V.brawlsWon != nil {
+			for season, wins := range V.brawlsWon {
+				insert := "INSERT INTO brawlwins (season, viewer_id, wins, channel) SELECT $1, $2, $3, $4"
+				upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2 AND channel=$4"
+				V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins, V.manager.channel)
+			}
 		}
+		if V.money > 0 {
+			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'money', $1, $2"
+			upsert := "UPDATE counts SET count=$2 WHERE type='money' AND viewer_id=$1"
+			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.id, V.money)
+		}
+		if V.linesTyped > 0 {
+			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'lines_typed', $1, $2"
+			upsert := "UPDATE counts SET count=$2 WHERE type='lines_typed' AND viewer_id=$1"
+			query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
+			V.manager.db.Exec(query, V.id, V.linesTyped)
+		}
+		if V.timeSpent > 0 {
+			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'time', $1, $2"
+			upsert := "UPDATE counts SET count=$2 WHERE type='time' AND viewer_id=$1"
+			query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
+			V.manager.db.Exec(query, V.id, V.timeSpent)
+		}
+		V.updated = false
+		log.Printf("saved user %s", V.Username)
 	}
-	if V.money > 0 {
-		insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'money', $1, $2"
-		upsert := "UPDATE counts SET count=$2 WHERE type='money' AND viewer_id=$1"
-		V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.id, V.money)
-	}
-	if V.linesTyped > 0 {
-		insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'lines_typed', $1, $2"
-		upsert := "UPDATE counts SET count=$2 WHERE type='lines_typed' AND viewer_id=$1"
-		query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
-		V.manager.db.Exec(query, V.id, V.linesTyped)
-	}
-	V.updated = false
-	log.Printf("saved user %s", V.Username)
 }

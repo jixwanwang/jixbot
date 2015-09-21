@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/command"
@@ -18,15 +17,13 @@ const (
 )
 
 type Bot struct {
-	channel     string
-	username    string
-	oath        string
-	texter      messaging.Texter
-	client      *irc.Client
-	commands    *command.CommandPool
-	viewerlist  *channel.ViewerList
-	broadcaster *channel.Broadcaster
-	db          *sql.DB
+	username string
+	oath     string
+	texter   messaging.Texter
+	client   *irc.Client
+	commands *command.CommandPool
+	channel  *channel.Channel
+	db       *sql.DB
 
 	groupclient *irc.Client
 	groupchat   string
@@ -36,28 +33,27 @@ type Bot struct {
 
 func New(channelName, username, oath, groupchat string, texter messaging.Texter, db *sql.DB) (*Bot, error) {
 	bot := &Bot{
-		channel:     channelName,
-		username:    username,
-		oath:        oath,
-		texter:      texter,
-		shutdown:    make(chan int),
-		broadcaster: channel.NewBroadcaster(channelName),
-		db:          db,
-		groupchat:   groupchat,
+		username:  username,
+		oath:      oath,
+		texter:    texter,
+		shutdown:  make(chan int),
+		channel:   channel.New(channelName, db),
+		db:        db,
+		groupchat: groupchat,
 	}
 
 	bot.startup()
 
-	ticker := time.NewTicker(1 * time.Minute)
-	go func() {
-		for {
-			<-ticker.C
+	// ticker := time.NewTicker(1 * time.Minute)
+	// go func() {
+	// 	for {
+	// 		<-ticker.C
 
-			if bot.broadcaster.Online {
-				bot.viewerlist.Tick()
-			}
-		}
-	}()
+	// 		if bot.broadcaster.Online {
+	// 			bot.viewerlist.Tick()
+	// 		}
+	// 	}
+	// }()
 
 	return bot, nil
 }
@@ -75,23 +71,22 @@ func (B *Bot) DeleteCommand(c string) {
 }
 
 func (B *Bot) GetEmotes() []string {
-	return B.viewerlist.Emotes
+	return B.channel.Emotes
 }
 
 func (B *Bot) AddEmote(e string) {
-	B.viewerlist.AddEmote(e)
+	B.channel.AddEmote(e)
 }
 
 func (B *Bot) SetProperty(k, v string) {
-	B.viewerlist.SetProperty(k, v)
+	B.channel.SetProperty(k, v)
 }
 
 func (B *Bot) startup() {
-	B.viewerlist = channel.NewViewerList(B.channel, B.db)
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
 	B.groupclient, _ = irc.New("192.16.64.212:443", 10)
 	B.reloadClients()
-	B.commands = command.NewCommandPool(B.viewerlist, B.broadcaster, B.client, B.groupclient, B.texter, B.db)
+	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.db)
 }
 
 func (B *Bot) reloadClients() {
@@ -102,7 +97,7 @@ func (B *Bot) reloadClients() {
 
 	B.client.Send(fmt.Sprintf("PASS %s", B.oath))
 	B.client.Send(fmt.Sprintf("NICK %s", B.username))
-	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel))
+	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel.GetChannelName()))
 	B.client.Send("CAP REQ :twitch.tv/membership")
 	B.client.Send("CAP REQ :twitch.tv/tags")
 
@@ -128,7 +123,7 @@ func (B *Bot) Start() {
 			if e.Err != nil {
 				log.Printf("Error %s, reloading irc client", e.Err.Error())
 				B.reloadClients()
-				B.viewerlist.Flush()
+				B.channel.ViewerList.Flush()
 				continue
 			}
 
@@ -136,29 +131,29 @@ func (B *Bot) Start() {
 			case "353": // Add viewers
 				colon := strings.Index(e.Message, ":")
 				usernames := strings.Split(e.Message[colon+1:], " ")
-				B.viewerlist.AddViewers(usernames)
+				B.channel.ViewerList.AddViewers(usernames)
 			case "MODE": // Mods
 				lastSpace := strings.LastIndex(e.Message, " ")
 				username := e.Message[lastSpace+1:]
 				plus := e.Message[lastSpace-2 : lastSpace-1]
 				log.Printf("%s did %s as a mod", username, plus)
 				if plus == "+" {
-					B.viewerlist.AddMod(username)
+					B.channel.ViewerList.AddMod(username)
 				} else {
-					B.viewerlist.RemoveMod(username)
+					B.channel.ViewerList.RemoveMod(username)
 				}
 			case "JOIN": // Viewers
-				B.viewerlist.AddViewers([]string{fromToUsername(e.From)})
+				B.channel.ViewerList.AddViewers([]string{fromToUsername(e.From)})
 			case "PART": // Leaving
-				B.viewerlist.RemoveViewer(fromToUsername(e.From))
+				B.channel.ViewerList.RemoveViewer(fromToUsername(e.From))
 			case "PRIVMSG": // Message
 				username := fromToUsername(e.From)
 				isMod, ok := e.Tags["user-type"]
 				if ok && isMod == "mod" {
-					B.viewerlist.AddMod(username)
+					B.channel.ViewerList.AddMod(username)
 					log.Printf("%s did + as a mod", username)
 				}
-				msg := strings.TrimPrefix(e.Message, "#"+B.channel+" :")
+				msg := strings.TrimPrefix(e.Message, "#"+B.channel.GetChannelName()+" :")
 				if username == "jtv" {
 					special := strings.TrimPrefix(e.Message, "jixbot :")
 					if strings.HasPrefix(special, "USERCOLOR") {
@@ -215,8 +210,8 @@ func (B *Bot) Start() {
 
 func (B *Bot) Shutdown() {
 	B.shutdown <- 1
-	log.Printf("shutting down for %s", B.channel)
-	B.viewerlist.Close()
+	log.Printf("shutting down for %s", B.channel.GetChannelName())
+	B.channel.ViewerList.Close()
 }
 
 func fromToUsername(from string) string {
@@ -228,17 +223,17 @@ func fromToUsername(from string) string {
 }
 
 func (B *Bot) processWhisper(username, msg string) {
-	B.viewerlist.RecordMessage(username, msg)
+	B.channel.RecordMessage(username, msg)
 	response := B.commands.GetWhisperResponse(username, msg)
 	if len(response) > 0 {
-		B.groupclient.Whisper(B.channel, username, response)
+		B.groupclient.Whisper(B.channel.GetChannelName(), username, response)
 	}
 }
 
 func (B *Bot) processMessage(username, msg string) {
-	B.viewerlist.RecordMessage(username, msg)
+	B.channel.RecordMessage(username, msg)
 	response := B.commands.GetResponse(username, msg)
 	if len(response) > 0 {
-		B.client.Say("#"+B.channel, response)
+		B.client.Say("#"+B.channel.GetChannelName(), response)
 	}
 }

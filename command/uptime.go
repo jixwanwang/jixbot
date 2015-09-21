@@ -35,10 +35,10 @@ func (T *uptime) Response(username, message string) string {
 
 	_, err := T.upComm.parse(message, clearance)
 	if err == nil {
-		if !T.cp.broadcaster.Online {
+		if !T.cp.channel.Broadcaster.Online {
 			return fmt.Sprintf("%s isn't online.", T.cp.channel.GetChannelName())
 		}
-		uptime := time.Now().UTC().Sub(T.cp.broadcaster.OnlineSince)
+		uptime := time.Now().UTC().Sub(T.cp.channel.Broadcaster.OnlineSince)
 		minutes := int(uptime.Minutes())
 		return fmt.Sprintf("%s hours, %s minutes", strconv.Itoa(minutes/60), strconv.Itoa(minutes%60))
 	}

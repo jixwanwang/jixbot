@@ -49,6 +49,7 @@ func main() {
 			channels = append(channels, channel)
 		}
 	}
+	rows.Close()
 	log.Printf("%v", channels)
 
 	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, db)

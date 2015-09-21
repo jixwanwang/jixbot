@@ -279,6 +279,7 @@ func (T *brawl) calculateBrawlStats(season int) string {
 			wins:     wins,
 		})
 	}
+	rows.Close()
 
 	if !foundWinner {
 		return fmt.Sprintf("No one has won for season %d yet!", season)
