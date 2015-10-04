@@ -19,22 +19,13 @@ func (T *summon) ID() string {
 	return "summon"
 }
 
-func (T *summon) Response(username, message string) string {
+func (T *summon) Response(username, message string) {
 	index := strings.Index(strings.ToLower(message), "jix")
 	indexbot := strings.Index(strings.ToLower(message), "jixbot")
 	_, ok := T.cp.channel.InChannel("jixwanwang")
 	if index >= 0 && indexbot < 0 && !ok && time.Since(T.lastSent).Seconds() > 600 {
 		T.lastSent = time.Now()
 		T.cp.texter.SendText(fmt.Sprintf("[%s] %s: %s", T.cp.channel.GetChannelName(), username, message))
-		return fmt.Sprintf("Jix has been summoned! PogChamp")
+		T.cp.Say(fmt.Sprintf("Jix has been summoned! PogChamp"))
 	}
-	return ""
-}
-
-func (T *summon) WhisperOnly() bool {
-	return false
-}
-
-func (T *summon) String() string {
-	return ""
 }

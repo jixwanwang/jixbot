@@ -19,37 +19,28 @@ func (T *deleteCommand) ID() string {
 	return "delete"
 }
 
-func (T *deleteCommand) Response(username, message string) string {
+func (T *deleteCommand) Response(username, message string) {
 	if T.cp.channel.GetLevel(username) < channel.MOD {
-		return ""
+		return
 	}
 
 	remaining := strings.TrimPrefix(message, "!deletecommand ")
 	if remaining == message {
-		return ""
+		return
 	}
 
 	remaining = strings.ToLower(strings.TrimSpace(remaining))
 
 	if remaining[:1] != "!" {
-		return ""
+		return
 	}
 
 	for i, c := range T.cp.commands {
 		if c.command == remaining {
 			T.cp.db.Exec("DELETE FROM textcommands WHERE channel=$1 AND command=$2", T.cp.channel.GetChannelName(), remaining)
 			T.cp.commands = append(T.cp.commands[:i], T.cp.commands[i+1:]...)
-			return fmt.Sprintf("@%s Command %s deleted", username, remaining)
+			T.cp.Say(fmt.Sprintf("@%s Command %s deleted", username, remaining))
+			return
 		}
 	}
-
-	return ""
-}
-
-func (T *deleteCommand) WhisperOnly() bool {
-	return false
-}
-
-func (T *deleteCommand) String() string {
-	return ""
 }

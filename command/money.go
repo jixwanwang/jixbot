@@ -12,7 +12,8 @@ import (
 )
 
 type money struct {
-	cp    *CommandPool
+	cp *CommandPool
+
 	stats *subCommand
 	give  *subCommand
 }
@@ -37,49 +38,49 @@ func (T *money) ID() string {
 	return "money"
 }
 
-func (T *money) Response(username, message string) string {
+func (T *money) Response(username, message string) {
 	viewer, ok := T.cp.channel.InChannel(username)
 	clearance := T.cp.channel.GetLevel(username)
 	_, err := T.stats.parse(message, clearance)
 	if err == nil {
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), T.calculateRichest())
-		return ""
+		T.cp.Say(T.calculateRichest())
+		return
 	}
 
 	args, err := T.give.parse(message, clearance)
 	if err == nil {
 		amount, _ := strconv.Atoi(args[1])
 		if amount <= 0 {
-			T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, "Please enter a valid amount.")
-			return ""
+			T.cp.Whisper(username, "Please enter a valid amount.")
+			return
 		}
 
 		to_viewer, ok := T.cp.channel.InChannel(strings.ToLower(args[0]))
 		if !ok {
-			T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, "That user isn't in the chat.")
-			return ""
+			T.cp.Whisper(username, "That user isn't in the chat.")
+			return
 		}
 
 		viewer, _ := T.cp.channel.InChannel(username)
 		if viewer.GetMoney() < amount {
-			T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, fmt.Sprintf("You don't have enough %ss", T.cp.channel.Currency))
-			return ""
+			T.cp.Whisper(username, fmt.Sprintf("You don't have enough %ss", T.cp.channel.Currency))
+			return
 		}
 
 		viewer.AddMoney(-amount)
 		to_viewer.AddMoney(amount)
 
-		T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, fmt.Sprintf("You gave %s %d %ss!", to_viewer.Username, amount, T.cp.channel.Currency))
-		T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), to_viewer.Username, fmt.Sprintf("You received %d %ss from %s!", amount, T.cp.channel.Currency, username))
-		return ""
+		T.cp.Whisper(username, fmt.Sprintf("You gave %s %d %ss!", to_viewer.Username, amount, T.cp.channel.Currency))
+		T.cp.Whisper(to_viewer.Username, fmt.Sprintf("You received %d %ss from %s!", amount, T.cp.channel.Currency, username))
+		return
 	}
 
 	if strings.TrimSpace(message) == "!cash" && ok {
-		T.cp.ircW.Whisper(T.cp.channel.GetChannelName(), username, fmt.Sprintf("You have %d %ss", viewer.GetMoney(), T.cp.channel.Currency))
-		return ""
+		T.cp.Whisper(username, fmt.Sprintf("You have %d %ss", viewer.GetMoney(), T.cp.channel.Currency))
+		return
 	}
 
-	return ""
+	return
 }
 
 type moneySortInterface struct {
@@ -119,12 +120,4 @@ func (T *money) calculateRichest() string {
 	}
 	rows.Close()
 	return output[:len(output)-2]
-}
-
-func (T *money) WhisperOnly() bool {
-	return true
-}
-
-func (T *money) String() string {
-	return ""
 }

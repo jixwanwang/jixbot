@@ -223,17 +223,10 @@ func fromToUsername(from string) string {
 }
 
 func (B *Bot) processWhisper(username, msg string) {
-	B.channel.RecordMessage(username, msg)
-	response := B.commands.GetWhisperResponse(username, msg)
-	if len(response) > 0 {
-		B.groupclient.Whisper(B.channel.GetChannelName(), username, response)
-	}
+	B.commands.GetResponse(username, msg)
 }
 
 func (B *Bot) processMessage(username, msg string) {
 	B.channel.RecordMessage(username, msg)
-	response := B.commands.GetResponse(username, msg)
-	if len(response) > 0 {
-		B.client.Say("#"+B.channel.GetChannelName(), response)
-	}
+	B.commands.GetResponse(username, msg)
 }

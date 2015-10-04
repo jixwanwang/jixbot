@@ -20,9 +20,9 @@ func (T *subMessage) ID() string {
 	return "submessage"
 }
 
-func (T *subMessage) Response(username, message string) string {
+func (T *subMessage) Response(username, message string) {
 	if username != "twitchnotify" {
-		return ""
+		return
 	}
 
 	msg := strings.ToLower(message)
@@ -30,19 +30,21 @@ func (T *subMessage) Response(username, message string) string {
 	if strings.Index(msg, "just subscribed!") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
-		return fmt.Sprintf("Thank you for subscribing %s, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes)
+		T.cp.Say(fmt.Sprintf("Thank you for subscribing %s, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
 	} else if strings.Index(msg, "subscribed for ") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
 		monthIndex := strings.Index(msg, " months in a row!")
 		if monthIndex == -1 {
-			return fmt.Sprintf("Thank you for re-subscribing %s for 1 month! %s", sub, emote)
+			T.cp.Say(fmt.Sprintf("Thank you for re-subscribing %s for 1 month! %s", sub, emote))
+			return
 		}
 
 		months, err := strconv.Atoi(msg[monthIndex-1 : monthIndex])
 		if err != nil {
 			emotes := strings.Join(T.cp.channel.Emotes, " ")
-			return fmt.Sprintf("Thank you %s for re-subscribing, for %s months! %s", sub, msg[monthIndex-1:monthIndex], emotes)
+			T.cp.Say(fmt.Sprintf("Thank you %s for re-subscribing, for %s months! %s", sub, msg[monthIndex-1:monthIndex], emotes))
+			return
 		}
 
 		emotes := ""
@@ -50,16 +52,6 @@ func (T *subMessage) Response(username, message string) string {
 			emotes = emotes + emote + " "
 		}
 
-		return fmt.Sprintf("Thank you %s for re-subscribing, for %v months! %s", sub, months, emotes)
+		T.cp.Say(fmt.Sprintf("Thank you %s for re-subscribing, for %v months! %s", sub, months, emotes))
 	}
-
-	return ""
-}
-
-func (T *subMessage) WhisperOnly() bool {
-	return false
-}
-
-func (T *subMessage) String() string {
-	return ""
 }

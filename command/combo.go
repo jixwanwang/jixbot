@@ -23,7 +23,7 @@ func (T *combo) ID() string {
 	return "combo"
 }
 
-func (T *combo) Response(username, message string) string {
+func (T *combo) Response(username, message string) {
 	// TODO: make sub only maybe?
 	if index := strings.Index(message, T.cp.channel.ComboTrigger); index >= 0 {
 		if !T.active {
@@ -38,10 +38,11 @@ func (T *combo) Response(username, message string) string {
 				T.comboers[username] = true
 				T.lastCombo = time.Now()
 				if len(T.comboers) == 5 {
-					return fmt.Sprintf("%s The combo begins! Type %s to keep the combo going and get 100 %ss!",
+					T.cp.Say(fmt.Sprintf("%s The combo begins! Type %s to keep the combo going and get 100 %ss!",
 						T.cp.channel.ComboTrigger,
 						T.cp.channel.ComboTrigger,
-						T.cp.channel.Currency)
+						T.cp.channel.Currency))
+					return
 				}
 				if len(T.comboers)%10 == 0 {
 					numCombo := len(T.comboers) / 10
@@ -52,10 +53,8 @@ func (T *combo) Response(username, message string) string {
 					for i := 0; i < numCombo; i++ {
 						comboSpam = comboSpam + T.cp.channel.ComboTrigger + " "
 					}
-					return fmt.Sprintf("%s %d COMBO %s",
-						comboSpam,
-						len(T.comboers),
-						comboSpam)
+					T.cp.Say(fmt.Sprintf("%s %d COMBO %s", comboSpam, len(T.comboers), comboSpam))
+					return
 				}
 			}
 		} else {
@@ -63,24 +62,16 @@ func (T *combo) Response(username, message string) string {
 			if len(T.comboers) < 5 {
 				T.comboers = map[string]bool{}
 				T.comboers[username] = true
-				viewer, in := T.cp.channel.InChannel(username)
-				if in {
-					viewer.AddMoney(100)
-				}
-				return ""
 			} else {
+				for c := range T.comboers {
+					viewer, in := T.cp.channel.InChannel(c)
+					if in {
+						viewer.AddMoney(100)
+					}
+				}
 				T.active = false
-				return fmt.Sprintf("%s C-C-C-C-COMBO BREAKER (%d combo achieved!)", T.cp.channel.ComboTrigger, len(T.comboers))
+				T.cp.Say(fmt.Sprintf("%s C-C-C-C-COMBO BREAKER (%d combo achieved!)", T.cp.channel.ComboTrigger, len(T.comboers)))
 			}
 		}
 	}
-	return ""
-}
-
-func (T *combo) WhisperOnly() bool {
-	return false
-}
-
-func (T *combo) String() string {
-	return ""
 }

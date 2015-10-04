@@ -64,6 +64,7 @@ func (C *CommandPool) loadTextCommands(channelName string) []*textCommand {
 		rows.Scan(&comm, &message, &clearance)
 
 		commands = append(commands, &textCommand{
+			cp:        C,
 			clearance: channel.Level(clearance),
 			command:   comm,
 			response:  message,
@@ -105,9 +106,6 @@ func (C *CommandPool) specialCommands() []Command {
 			cp: C,
 		},
 		&money{
-			cp: C,
-		},
-		&slots{
 			cp: C,
 		},
 		&brawl{
@@ -160,43 +158,24 @@ func (C *CommandPool) DeleteCommand(command string) {
 	C.db.Exec("DELETE FROM commands WHERE channel=$1 AND command=$2", C.channel.GetChannelName(), command)
 }
 
-func (C *CommandPool) GetResponse(username, message string) string {
+func (C *CommandPool) Say(message string) {
+	C.irc.Say("#"+C.channel.GetChannelName(), message)
+}
+
+func (C *CommandPool) Whisper(username, message string) {
+	C.ircW.Whisper(C.channel.GetChannelName(), username, message)
+}
+
+func (C *CommandPool) GetResponse(username, message string) {
 	for _, c := range C.specials {
 		if _, ok := C.enabled[c.ID()]; ok {
-			if !c.WhisperOnly() {
-				res := c.Response(username, message)
-				if len(res) > 0 {
-					return res
-				}
-			}
+			c.Response(username, message)
 		}
 	}
 	for _, c := range C.globalcommands {
-		res := c.Response(username, message)
-		if len(res) > 0 {
-			return res
-		}
+		c.Response(username, message)
 	}
 	for _, c := range C.commands {
-		res := c.Response(username, message)
-		if len(res) > 0 {
-			return res
-		}
+		c.Response(username, message)
 	}
-
-	return ""
-}
-
-func (C *CommandPool) GetWhisperResponse(username, message string) string {
-	for _, c := range C.specials {
-		if _, ok := C.enabled[c.ID()]; ok {
-			if c.WhisperOnly() {
-				res := c.Response(username, message)
-				if len(res) > 0 {
-					return res
-				}
-			}
-		}
-	}
-	return ""
 }

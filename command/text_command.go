@@ -22,15 +22,10 @@ func (T textCommand) ID() string {
 	return "text"
 }
 
-func (T textCommand) Response(username, message string) string {
+func (T textCommand) Response(username, message string) {
 	if strings.ToLower(message) == T.command {
-		return T.response
+		T.cp.Say(T.response)
 	}
-	return ""
-}
-
-func (T *textCommand) WhisperOnly() bool {
-	return false
 }
 
 func (B textCommand) String() string {

@@ -29,27 +29,18 @@ func (T *uptime) ID() string {
 	return "uptime"
 }
 
-func (T *uptime) Response(username, message string) string {
+func (T *uptime) Response(username, message string) {
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.upComm.parse(message, clearance)
 	if err == nil {
 		if !T.cp.channel.Broadcaster.Online {
-			return fmt.Sprintf("%s isn't online.", T.cp.channel.GetChannelName())
+			T.cp.Say(fmt.Sprintf("%s isn't online.", T.cp.channel.GetChannelName()))
+			return
 		}
 		uptime := time.Now().UTC().Sub(T.cp.channel.Broadcaster.OnlineSince)
 		minutes := int(uptime.Minutes())
-		return fmt.Sprintf("%s hours, %s minutes", strconv.Itoa(minutes/60), strconv.Itoa(minutes%60))
+		T.cp.Say(fmt.Sprintf("%s hours, %s minutes", strconv.Itoa(minutes/60), strconv.Itoa(minutes%60)))
 	}
-
-	return ""
-}
-
-func (T *uptime) WhisperOnly() bool {
-	return false
-}
-
-func (T *uptime) String() string {
-	return "Uptime Command"
 }

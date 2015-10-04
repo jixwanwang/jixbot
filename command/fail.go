@@ -19,28 +19,19 @@ func (T fail) ID() string {
 	return "failfish"
 }
 
-func (T fail) Response(username, message string) string {
+func (T fail) Response(username, message string) {
 	if time.Since(T.lastUsed).Seconds() < 2 {
-		return ""
+		return
 	}
 
 	index := strings.Index(strings.ToLower(message), "failfish")
 	if index == -1 {
-		return ""
+		return
 	}
 
 	emote := message[index : index+8]
 	if emote != "FailFish" {
 		T.lastUsed = time.Now()
-		return fmt.Sprintf("@%s FailFish", username)
+		T.cp.Say(fmt.Sprintf("@%s FailFish", username))
 	}
-	return ""
-}
-
-func (T *fail) WhisperOnly() bool {
-	return false
-}
-
-func (T fail) String() string {
-	return ""
 }

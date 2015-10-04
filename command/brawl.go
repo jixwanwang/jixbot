@@ -100,10 +100,10 @@ func (T *brawl) endBrawl() {
 	}
 
 	if len(users) == 1 {
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
+		T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
 		return
 	} else if len(users) < 5 {
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
+		T.cp.Say(fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
 		return
 	}
 
@@ -119,16 +119,11 @@ func (T *brawl) endBrawl() {
 
 	if len(weapon) > 0 {
 		var message string
-		// // SO LAZY OMG
-		// if weapon[:1] == "a" || weapon[:1] == "o" || weapon[:1] == "e" || weapon[:1] == "i" || weapon[:1] == "u" {
-		// 	message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
-		// } else {
 		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
-		// }
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
+		T.cp.Say(message)
 	} else {
 		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 500 %ss from the losers.", winner, T.cp.channel.Currency)
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), message)
+		T.cp.Say(message)
 	}
 
 	winningUser, in := T.cp.channel.InChannel(winner)
@@ -151,37 +146,38 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
+	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
 }
 
-func (T *brawl) Response(username, message string) string {
+func (T *brawl) Response(username, message string) {
 	message = strings.TrimSpace(message)
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.brawlComm.parse(message, clearance)
 	if err == nil && T.active == false {
 		T.startBrawl()
-		return ""
+		return
 	}
 
 	_, err = T.seasonComm.parse(message, clearance)
 	if err == nil {
-		return fmt.Sprintf("The current brawl season is %d", T.season)
+		T.cp.Say(fmt.Sprintf("The current brawl season is %d", T.season))
+		return
 	}
 
 	_, err = T.newSeasonComm.parse(message, clearance)
 	if err == nil && T.active == false {
-		topOfSeason := T.calculateBrawlStats(T.season)
-		T.cp.irc.Say("#"+T.cp.channel.GetChannelName(), topOfSeason)
+		T.cp.Say(T.calculateBrawlStats(T.season))
 		T.season = T.season + 1
-		return fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season)
+		T.cp.Say(fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season))
+		return
 	}
 
 	args, err := T.pileComm.parse(message, clearance)
 	if err == nil && T.active == true {
 		_, in := T.cp.channel.InChannel(username)
 		if !in {
-			return ""
+			return
 		}
 
 		if len(args) > 0 {
@@ -190,7 +186,7 @@ func (T *brawl) Response(username, message string) string {
 			T.brawlers[username] = ""
 		}
 
-		return ""
+		return
 	}
 
 	_, err = T.statComm.parse(message, clearance)
@@ -202,17 +198,19 @@ func (T *brawl) Response(username, message string) string {
 			if !ok {
 				wins = 0
 			}
-			return fmt.Sprintf("@%s you have won %d brawls this season", username, wins)
+			T.cp.Say(fmt.Sprintf("@%s you have won %d brawls this season", username, wins))
+			return
 		}
 	}
 
 	args, err = T.statsComm.parse(message, clearance)
 	if err == nil {
 		season, _ := strconv.Atoi(args[0])
-		return T.calculateBrawlStats(season)
+		T.cp.Say(T.calculateBrawlStats(season))
+		return
 	}
 
-	return ""
+	return
 }
 
 type brawlWin struct {
@@ -320,12 +318,4 @@ func (T *brawl) calculateBrawlStats(season int) string {
 	}
 
 	return output[:len(output)-2]
-}
-
-func (T *brawl) WhisperOnly() bool {
-	return false
-}
-
-func (T *brawl) String() string {
-	return ""
 }
