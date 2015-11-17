@@ -31,6 +31,7 @@ func New(channel string, db *sql.DB) *Channel {
 		db:          db,
 	}
 
+	log.Printf("getting channel properties for %s", channel)
 	rows, err := db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
 	c.Currency = "Coin"
 	c.SubName = "subscribers"
@@ -45,6 +46,7 @@ func New(channel string, db *sql.DB) *Channel {
 	}
 	rows.Close()
 
+	log.Printf("getting emotes properties for %s", channel)
 	emotes := []string{}
 	rows, err = db.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
 	if err != nil {
@@ -98,22 +100,25 @@ func (V *Channel) InChannel(username string) (*Viewer, bool) {
 }
 
 func (V *Channel) SetProperty(k, v string) {
+	valid := true
 	if k == "currency" {
 		V.Currency = v
-	}
-	if k == "subname" {
+	} else if k == "subname" {
 		V.SubName = v
-	}
-	if k == "combo_trigger" {
+	} else if k == "combo_trigger" {
 		V.ComboTrigger = v
-	}
-	if k == "line_typed_reward" {
+	} else if k == "line_typed_reward" {
 		V.LineTypedReward, _ = strconv.Atoi(v)
-	}
-	if k == "minute_spent_reward" {
+	} else if k == "minute_spent_reward" {
 		V.MinuteSpentAward, _ = strconv.Atoi(v)
+	} else {
+		valid = false
 	}
-	V.db.Exec("INSERT INTO channel_properties (channel, k, v) VALUES ($1, $2, $3)", V.GetChannelName(), k, v)
+	if valid {
+		insert := "INSERT INTO channel_properties (channel, k, v) SELECT $1, $2, $3"
+		upsert := "UPDATE channel_properties SET v=$3 WHERE k=$2 AND channel=$1"
+		V.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.GetChannelName(), k, v)
+	}
 }
 
 func (V *Channel) AddEmote(e string) {

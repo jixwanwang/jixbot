@@ -19,7 +19,7 @@ func (T *summon) ID() string {
 	return "summon"
 }
 
-func (T *summon) Response(username, message string) {
+func (T *summon) Response(username, message string, whisper bool) {
 	index := strings.Index(strings.ToLower(message), "jix")
 	indexbot := strings.Index(strings.ToLower(message), "jixbot")
 	_, ok := T.cp.channel.InChannel("jixwanwang")

@@ -35,7 +35,7 @@ func (T *addCommand) ID() string {
 	return "add"
 }
 
-func (T *addCommand) Response(username, message string) {
+func (T *addCommand) Response(username, message string, whisper bool) {
 	clearance := T.cp.channel.GetLevel(username)
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return

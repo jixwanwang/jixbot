@@ -38,9 +38,10 @@ func (T *money) ID() string {
 	return "money"
 }
 
-func (T *money) Response(username, message string) {
+func (T *money) Response(username, message string, whisper bool) {
 	viewer, ok := T.cp.channel.InChannel(username)
 	clearance := T.cp.channel.GetLevel(username)
+
 	_, err := T.stats.parse(message, clearance)
 	if err == nil {
 		T.cp.Say(T.calculateRichest())

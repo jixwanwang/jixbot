@@ -166,16 +166,16 @@ func (C *CommandPool) Whisper(username, message string) {
 	C.ircW.Whisper(C.channel.GetChannelName(), username, message)
 }
 
-func (C *CommandPool) GetResponse(username, message string) {
+func (C *CommandPool) GetResponse(username, message string, whisper bool) {
 	for _, c := range C.specials {
 		if _, ok := C.enabled[c.ID()]; ok {
-			c.Response(username, message)
+			c.Response(username, message, whisper)
 		}
 	}
 	for _, c := range C.globalcommands {
-		c.Response(username, message)
+		c.Response(username, message, whisper)
 	}
 	for _, c := range C.commands {
-		c.Response(username, message)
+		c.Response(username, message, whisper)
 	}
 }

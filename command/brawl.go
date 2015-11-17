@@ -149,7 +149,7 @@ func (T *brawl) startBrawl() {
 	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
 }
 
-func (T *brawl) Response(username, message string) {
+func (T *brawl) Response(username, message string, whisper bool) {
 	message = strings.TrimSpace(message)
 	clearance := T.cp.channel.GetLevel(username)
 

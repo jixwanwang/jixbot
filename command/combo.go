@@ -23,7 +23,7 @@ func (T *combo) ID() string {
 	return "combo"
 }
 
-func (T *combo) Response(username, message string) {
+func (T *combo) Response(username, message string, whisper bool) {
 	// TODO: make sub only maybe?
 	if index := strings.Index(message, T.cp.channel.ComboTrigger); index >= 0 {
 		if !T.active {

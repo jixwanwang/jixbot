@@ -18,7 +18,7 @@ const (
 type Command interface {
 	ID() string
 	Init()
-	Response(username, message string)
+	Response(username, message string, whisper bool)
 }
 
 var BadCommandError = fmt.Errorf("Bad command")

@@ -20,7 +20,7 @@ func (T *subMessage) ID() string {
 	return "submessage"
 }
 
-func (T *subMessage) Response(username, message string) {
+func (T *subMessage) Response(username, message string, whisper bool) {
 	if username != "twitchnotify" {
 		return
 	}

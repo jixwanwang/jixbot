@@ -19,7 +19,7 @@ func (T fail) ID() string {
 	return "failfish"
 }
 
-func (T fail) Response(username, message string) {
+func (T fail) Response(username, message string, whisper bool) {
 	if time.Since(T.lastUsed).Seconds() < 2 {
 		return
 	}

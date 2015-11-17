@@ -35,15 +35,15 @@ func (T *timeSpent) ID() string {
 	return "timespent"
 }
 
-func (T *timeSpent) Response(username, message string) {
+func (T *timeSpent) Response(username, message string, whisper bool) {
 	clearance := T.cp.channel.GetLevel(username)
 	_, err := T.stats.parse(message, clearance)
 	if err == nil {
-		T.cp.Say(T.calculateRichest())
+		T.cp.Say(T.calculateLongest())
 	}
 }
 
-func (T *timeSpent) calculateRichest() string {
+func (T *timeSpent) calculateLongest() string {
 	rows, err := T.cp.db.Query(`SELECT sum(c.count) time, v.username FROM counts AS c `+
 		`JOIN viewers AS v ON v.id = c.viewer_id `+
 		`WHERE c.type='time' AND v.channel=$1 `+

@@ -22,7 +22,7 @@ func (T textCommand) ID() string {
 	return "text"
 }
 
-func (T textCommand) Response(username, message string) {
+func (T textCommand) Response(username, message string, whisper bool) {
 	if strings.ToLower(message) == T.command {
 		T.cp.Say(T.response)
 	}

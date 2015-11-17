@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/jixwanwang/jixbot/messaging"
@@ -29,6 +30,7 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 		bots:      map[string]*stream_bot.Bot{},
 	}
 	for _, channel := range channels {
+		log.Printf("loading bot for %s", channel)
 		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
 
 		if err != nil {

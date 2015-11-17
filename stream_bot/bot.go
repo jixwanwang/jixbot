@@ -42,6 +42,7 @@ func New(channelName, username, oath, groupchat string, texter messaging.Texter,
 		groupchat: groupchat,
 	}
 
+	log.Printf("starting up")
 	bot.startup()
 
 	// ticker := time.NewTicker(1 * time.Minute)
@@ -223,10 +224,10 @@ func fromToUsername(from string) string {
 }
 
 func (B *Bot) processWhisper(username, msg string) {
-	B.commands.GetResponse(username, msg)
+	B.commands.GetResponse(username, msg, true)
 }
 
 func (B *Bot) processMessage(username, msg string) {
 	B.channel.RecordMessage(username, msg)
-	B.commands.GetResponse(username, msg)
+	B.commands.GetResponse(username, msg, false)
 }
