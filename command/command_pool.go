@@ -125,6 +125,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&combo{
 			cp: C,
 		},
+		&emotes{
+			cp: C,
+		},
 	}
 }
 

@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -25,7 +24,6 @@ func (T *textCommand) Init() {
 		cooldown:  100 * time.Millisecond,
 		clearance: T.clearance,
 	}
-	log.Printf("%v", T.comm)
 }
 
 func (T *textCommand) ID() string {

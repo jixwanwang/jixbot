@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -42,7 +41,7 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 	}
 
 	clearance := T.cp.channel.GetLevel(username)
-	if T.cp.channel.GetLevel(username) < channel.MOD {
+	if clearance < channel.MOD {
 		return
 	}
 
@@ -80,7 +79,6 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 			T.cp.commands[i] = comm
 			T.cp.commands[i].Init()
 
-			log.Printf("%v", T.cp.commands)
 			T.cp.Say(fmt.Sprintf("@%s Command %s -> %s updated", username, comm.command, comm.response))
 			return
 		}
