@@ -20,6 +20,10 @@ func (T *deleteCommand) ID() string {
 }
 
 func (T *deleteCommand) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return
 	}

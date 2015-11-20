@@ -20,6 +20,10 @@ func (T fail) ID() string {
 }
 
 func (T fail) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	if time.Since(T.lastUsed).Seconds() < 2 {
 		return
 	}

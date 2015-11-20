@@ -14,11 +14,19 @@ import (
 type money struct {
 	cp *CommandPool
 
+	cash  *subCommand
 	stats *subCommand
 	give  *subCommand
 }
 
 func (T *money) Init() {
+	T.cash = &subCommand{
+		command:   "!cash",
+		numArgs:   0,
+		cooldown:  200 * time.Millisecond,
+		clearance: channel.VIEWER,
+	}
+
 	T.stats = &subCommand{
 		command:   "!toponepercent",
 		numArgs:   0,
@@ -29,7 +37,7 @@ func (T *money) Init() {
 	T.give = &subCommand{
 		command:   "!give",
 		numArgs:   2,
-		cooldown:  1 * time.Millisecond,
+		cooldown:  200 * time.Millisecond,
 		clearance: channel.VIEWER,
 	}
 }
@@ -39,7 +47,15 @@ func (T *money) ID() string {
 }
 
 func (T *money) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	viewer, ok := T.cp.channel.InChannel(username)
+	if !ok {
+		return
+	}
+
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.stats.parse(message, clearance)
@@ -76,8 +92,9 @@ func (T *money) Response(username, message string, whisper bool) {
 		return
 	}
 
-	if strings.TrimSpace(message) == "!cash" && ok {
-		T.cp.Whisper(username, fmt.Sprintf("You have %d %ss", viewer.GetMoney(), T.cp.channel.Currency))
+	_, err = T.cash.parse(message, clearance)
+	if err == nil {
+		T.cp.Whisper(username, fmt.Sprintf("You have %d %ss in %s's channel", viewer.GetMoney(), T.cp.channel.Currency, T.cp.channel.Username))
 		return
 	}
 

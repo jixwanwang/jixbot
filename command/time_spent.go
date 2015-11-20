@@ -36,6 +36,10 @@ func (T *timeSpent) ID() string {
 }
 
 func (T *timeSpent) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	clearance := T.cp.channel.GetLevel(username)
 	_, err := T.stats.parse(message, clearance)
 	if err == nil {

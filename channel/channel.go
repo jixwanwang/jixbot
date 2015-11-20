@@ -131,6 +131,15 @@ func (V *Channel) AddEmote(e string) {
 	V.db.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", V.Username, e)
 }
 
+func (V *Channel) DeleteEmote(e string) {
+	for i, emote := range V.Emotes {
+		if e == emote {
+			V.Emotes = append(V.Emotes[:i], V.Emotes[i+1:]...)
+			V.db.Exec("DELETE FROM emotes WHERE channel=$1 AND emote=$2", V.Username, e)
+		}
+	}
+}
+
 func (V *Channel) RecordMessage(username, msg string) {
 	v, ok := V.ViewerList.InChannel(username)
 	if !ok {

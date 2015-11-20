@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -36,6 +37,10 @@ func (T *addCommand) ID() string {
 }
 
 func (T *addCommand) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	clearance := T.cp.channel.GetLevel(username)
 	if T.cp.channel.GetLevel(username) < channel.MOD {
 		return
@@ -46,19 +51,23 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 	args, err := T.plebComm.parse(message, clearance)
 	if err == nil && len(args) > 1 && args[0][:1] == "!" {
 		comm = &textCommand{
+			cp:        T.cp,
 			clearance: channel.VIEWER,
 			command:   strings.ToLower(args[0]),
 			response:  args[1],
 		}
+		comm.Init()
 	}
 
 	args, err = T.modComm.parse(message, clearance)
 	if err == nil && len(args) > 1 && args[0][:1] == "!" {
 		comm = &textCommand{
+			cp:        T.cp,
 			clearance: channel.MOD,
 			command:   strings.ToLower(args[0]),
 			response:  args[1],
 		}
+		comm.Init()
 	}
 
 	if comm == nil {
@@ -69,6 +78,9 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		if c.command == comm.command {
 			T.cp.db.Exec("UPDATE textcommands SET message=$1, clearance=$2 WHERE channel=$3 AND command=$4", comm.response, comm.clearance, T.cp.channel.GetChannelName(), comm.command)
 			T.cp.commands[i] = comm
+			T.cp.commands[i].Init()
+
+			log.Printf("%v", T.cp.commands)
 			T.cp.Say(fmt.Sprintf("@%s Command %s -> %s updated", username, comm.command, comm.response))
 			return
 		}

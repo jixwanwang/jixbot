@@ -150,6 +150,10 @@ func (T *brawl) startBrawl() {
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	message = strings.TrimSpace(message)
 	clearance := T.cp.channel.GetLevel(username)
 

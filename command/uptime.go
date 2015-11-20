@@ -30,6 +30,10 @@ func (T *uptime) ID() string {
 }
 
 func (T *uptime) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	message = strings.TrimSpace(strings.ToLower(message))
 	clearance := T.cp.channel.GetLevel(username)
 

@@ -45,17 +45,6 @@ func New(channelName, username, oath, groupchat string, texter messaging.Texter,
 	log.Printf("starting up")
 	bot.startup()
 
-	// ticker := time.NewTicker(1 * time.Minute)
-	// go func() {
-	// 	for {
-	// 		<-ticker.C
-
-	// 		if bot.broadcaster.Online {
-	// 			bot.viewerlist.Tick()
-	// 		}
-	// 	}
-	// }()
-
 	return bot, nil
 }
 
@@ -77,6 +66,10 @@ func (B *Bot) GetEmotes() []string {
 
 func (B *Bot) AddEmote(e string) {
 	B.channel.AddEmote(e)
+}
+
+func (B *Bot) DeleteEmote(e string) {
+	B.channel.DeleteEmote(e)
 }
 
 func (B *Bot) SetProperty(k, v string) {

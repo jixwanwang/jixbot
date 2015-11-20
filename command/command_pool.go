@@ -63,12 +63,14 @@ func (C *CommandPool) loadTextCommands(channelName string) []*textCommand {
 		var clearance int
 		rows.Scan(&comm, &message, &clearance)
 
-		commands = append(commands, &textCommand{
+		command := &textCommand{
 			cp:        C,
 			clearance: channel.Level(clearance),
 			command:   comm,
 			response:  message,
-		})
+		}
+		command.Init()
+		commands = append(commands, command)
 	}
 	rows.Close()
 

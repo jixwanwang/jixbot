@@ -20,6 +20,10 @@ func (T *summon) ID() string {
 }
 
 func (T *summon) Response(username, message string, whisper bool) {
+	if whisper {
+		return
+	}
+
 	index := strings.Index(strings.ToLower(message), "jix")
 	indexbot := strings.Index(strings.ToLower(message), "jixbot")
 	_, ok := T.cp.channel.InChannel("jixwanwang")
