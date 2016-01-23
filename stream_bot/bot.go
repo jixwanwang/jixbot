@@ -48,32 +48,31 @@ func New(channelName, username, oath, groupchat string, texter messaging.Texter,
 	return bot, nil
 }
 
-func (B *Bot) GetActiveCommands() []string {
-	return B.commands.GetActiveCommands()
-}
-
 func (B *Bot) AddActiveCommand(c string) {
 	B.commands.ActivateCommand(c)
 }
-
+func (B *Bot) GetActiveCommands() []string {
+	return B.commands.GetActiveCommands()
+}
 func (B *Bot) DeleteCommand(c string) {
 	B.commands.DeleteCommand(c)
-}
-
-func (B *Bot) GetEmotes() []string {
-	return B.channel.Emotes
 }
 
 func (B *Bot) AddEmote(e string) {
 	B.channel.AddEmote(e)
 }
-
+func (B *Bot) GetEmotes() []string {
+	return B.channel.Emotes
+}
 func (B *Bot) DeleteEmote(e string) {
 	B.channel.DeleteEmote(e)
 }
 
 func (B *Bot) SetProperty(k, v string) {
 	B.channel.SetProperty(k, v)
+}
+func (B *Bot) GetProperties() map[string]interface{} {
+	return B.channel.GetProperties()
 }
 
 func (B *Bot) startup() {
@@ -102,6 +101,12 @@ func (B *Bot) reloadClients() {
 	B.groupclient.Send(fmt.Sprintf("PASS %s", B.oath))
 	B.groupclient.Send(fmt.Sprintf("NICK %s", B.username))
 	B.groupclient.Send("CAP REQ :twitch.tv/commands")
+}
+
+func (B *Bot) Shutdown() {
+	B.shutdown <- 1
+	log.Printf("shutting down for %s", B.channel.GetChannelName())
+	B.channel.ViewerList.Close()
 }
 
 func (B *Bot) Start() {
@@ -147,6 +152,11 @@ func (B *Bot) Start() {
 					B.channel.ViewerList.AddMod(username)
 					log.Printf("%s did + as a mod", username)
 				}
+				isSub, ok := e.Tags["subscriber"]
+				if ok && isSub == "1" {
+					log.Printf("%s is a subscriber", username)
+					B.channel.ViewerList.SetSubscriber(username)
+				}
 				msg := strings.TrimPrefix(e.Message, "#"+B.channel.GetChannelName()+" :")
 				if username == "jtv" {
 					special := strings.TrimPrefix(e.Message, "jixbot :")
@@ -158,7 +168,7 @@ func (B *Bot) Start() {
 						// parts := strings.Split(special, " ")
 						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
 					} else {
-						// log.Printf("jtv said: %s", special)
+						log.Printf("jtv said: %s", special)
 					}
 				} else if username == "twitchnotify" {
 					log.Printf("TWITCHNOTIFY SAYS: %s", msg)
@@ -175,6 +185,7 @@ func (B *Bot) Start() {
 			default: //ignore
 				log.Printf("Unknown: %v", e)
 			}
+		// Whispers
 		case e := <-groupreads:
 			if e.Err != nil {
 				log.Printf("Error %s, reloading irc client", e.Err.Error())
@@ -200,12 +211,6 @@ func (B *Bot) Start() {
 			}
 		}
 	}
-}
-
-func (B *Bot) Shutdown() {
-	B.shutdown <- 1
-	log.Printf("shutting down for %s", B.channel.GetChannelName())
-	B.channel.ViewerList.Close()
 }
 
 func fromToUsername(from string) string {

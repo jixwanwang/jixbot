@@ -21,8 +21,7 @@ func (T *API) getCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 
 	comms := bot.GetActiveCommands()
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strings.Join(comms, ", ")))
+	serveJSON(w, comms)
 }
 
 func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
@@ -41,7 +40,9 @@ func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 		bot.AddActiveCommand(c)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	comms := bot.GetActiveCommands()
+
+	serveJSON(w, comms)
 }
 
 func (T *API) deleteCommands(C web.C, w http.ResponseWriter, r *http.Request) {
@@ -60,5 +61,7 @@ func (T *API) deleteCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 		bot.DeleteCommand(c)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	comms := bot.GetActiveCommands()
+
+	serveJSON(w, comms)
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -44,8 +45,8 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 
 	// Channel modification
 	mux.Post("/channels/:channel", api.newChannelBot)
-	// mux.Get("/channels", api.getChannels)
-	// mux.Get("/channels/:channel", api.getChannelInfo)
+	mux.Get("/channels", api.getChannels)
+	mux.Get("/channels/:channel", api.getChannelInfo)
 
 	// Channel properties
 	mux.Put("/channels/properties/:channel", api.setProperty)
@@ -74,22 +75,13 @@ func serveError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 }
 
-func (T *API) newChannelBot(C web.C, w http.ResponseWriter, r *http.Request) {
-	channel := C.URLParams["channel"]
-	if _, ok := T.bots[channel]; ok {
-		w.WriteHeader(http.StatusNotModified)
-		return
-	}
-
-	b, err := stream_bot.New(channel, T.nickname, T.oath, T.groupchat, T.texter, T.db)
-
+func serveJSON(w http.ResponseWriter, v interface{}) {
+	b, err := json.Marshal(v)
 	if err != nil {
 		serveError(w, err)
 		return
 	}
 
-	T.bots[channel] = b
-	go b.Start()
-
+	w.Write(b)
 	w.WriteHeader(http.StatusOK)
 }

@@ -17,8 +17,7 @@ func (T *API) getEmotes(C web.C, w http.ResponseWriter, r *http.Request) {
 
 	emotes := bot.GetEmotes()
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strings.Join(emotes, ",")))
+	serveJSON(w, emotes)
 }
 
 func (T *API) addEmotes(C web.C, w http.ResponseWriter, r *http.Request) {
@@ -35,8 +34,9 @@ func (T *API) addEmotes(C web.C, w http.ResponseWriter, r *http.Request) {
 		bot.AddEmote(e)
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strings.Join(bot.GetEmotes(), ",")))
+	e := bot.GetEmotes()
+
+	serveJSON(w, e)
 }
 
 func (T *API) deleteEmotes(C web.C, w http.ResponseWriter, r *http.Request) {
@@ -53,6 +53,7 @@ func (T *API) deleteEmotes(C web.C, w http.ResponseWriter, r *http.Request) {
 		bot.DeleteEmote(e)
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strings.Join(bot.GetEmotes(), ",")))
+	e := bot.GetEmotes()
+
+	serveJSON(w, e)
 }

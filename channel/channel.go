@@ -121,6 +121,16 @@ func (V *Channel) SetProperty(k, v string) {
 	}
 }
 
+func (V *Channel) GetProperties() map[string]interface{} {
+	return map[string]interface{}{
+		"currency":            V.Currency,
+		"subname":             V.SubName,
+		"combo_trigger":       V.ComboTrigger,
+		"line_typed_reward":   V.LineTypedReward,
+		"minute_spent_reward": V.MinuteSpentAward,
+	}
+}
+
 func (V *Channel) AddEmote(e string) {
 	for _, emote := range V.Emotes {
 		if e == emote {

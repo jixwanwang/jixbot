@@ -2,6 +2,13 @@ package channel
 
 import "log"
 
+var blacklistedUsers = map[string]int{
+	"nightbot":     0,
+	"moobot":       0,
+	"jixbot":       0,
+	"twitchnotify": 0,
+}
+
 // Represents a viewer in a single stream.
 type Viewer struct {
 	Username string
@@ -10,10 +17,20 @@ type Viewer struct {
 	updated bool
 	manager *ViewerList
 
+	subscriber bool
+
 	linesTyped int
 	timeSpent  int
 	money      int
 	brawlsWon  map[int]int
+}
+
+func (V *Viewer) Reset() {
+	V.money = 0
+	V.linesTyped = 0
+	V.timeSpent = 0
+	V.brawlsWon = map[int]int{}
+	V.updated = true
 }
 
 func (V *Viewer) GetBrawlsWon() map[int]int {
@@ -134,6 +151,9 @@ func (V *Viewer) AddMoney(amount int) {
 }
 
 func (V *Viewer) save() {
+	if _, ok := blacklistedUsers[V.Username]; ok {
+		V.Reset()
+	}
 	if V.updated {
 		if V.id == -1 {
 			// Write new user to db

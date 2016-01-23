@@ -20,6 +20,9 @@ type CommandPool struct {
 	enabled        map[string]bool
 	commands       []*textCommand
 	globalcommands []*textCommand
+
+	modOnly bool
+	subOnly bool
 }
 
 func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
@@ -128,6 +131,15 @@ func (C *CommandPool) specialCommands() []Command {
 		&emotes{
 			cp: C,
 		},
+		&timeSpent{
+			cp: C,
+		},
+		&conversation{
+			cp: C,
+		},
+		&modonly{
+			cp: C,
+		},
 	}
 }
 
@@ -172,6 +184,14 @@ func (C *CommandPool) Whisper(username, message string) {
 }
 
 func (C *CommandPool) GetResponse(username, message string, whisper bool) {
+	if C.modOnly && !whisper && C.channel.GetLevel(username) < channel.MOD {
+		return
+	}
+
+	if C.subOnly && !whisper && C.channel.GetLevel(username) < channel.SUBSCRIBER {
+		return
+	}
+
 	for _, c := range C.specials {
 		if _, ok := C.enabled[c.ID()]; ok {
 			c.Response(username, message, whisper)

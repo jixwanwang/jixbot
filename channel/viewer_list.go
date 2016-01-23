@@ -9,11 +9,10 @@ type Level int
 
 const (
 	VIEWER      Level = 0
-	TURBO       Level = 1
 	FOLLOWER    Level = 2
 	SUBSCRIBER  Level = 4
 	MOD         Level = 6
-	ADMIN       Level = 7
+	ADMIN       Level = 8
 	STAFF       Level = 9
 	BROADCASTER Level = 10
 	GOD         Level = 12
@@ -87,6 +86,13 @@ func (V *ViewerList) RemoveMod(username string) {
 	delete(V.mods, username)
 }
 
+func (V *ViewerList) SetSubscriber(username string) {
+	v, ok := V.viewers[username]
+	if ok {
+		v.subscriber = true
+	}
+}
+
 func (V *ViewerList) InChannel(username string) (*Viewer, bool) {
 	v, ok := V.viewers[username]
 	return v, ok
@@ -156,6 +162,11 @@ func (V *ViewerList) GetLevel(username string) Level {
 		return STAFF
 	} else if _, ok := V.mods[username]; ok {
 		return MOD
+	} else {
+		u, ok := V.InChannel(username)
+		if ok && u.subscriber {
+			return SUBSCRIBER
+		}
 	}
 	return VIEWER
 }
