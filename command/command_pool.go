@@ -83,6 +83,9 @@ func (C *CommandPool) loadTextCommands(channelName string) []*textCommand {
 func (C *CommandPool) enabledCommands() map[string]bool {
 	allowed := map[string]bool{}
 
+	// Always enable info command
+	allowed["info"] = true
+
 	rows, err := C.db.Query("SELECT command FROM commands WHERE channel=$1", C.channel.GetChannelName())
 	if err != nil {
 		log.Printf("Couldn't read commands")
@@ -101,6 +104,9 @@ func (C *CommandPool) enabledCommands() map[string]bool {
 
 func (C *CommandPool) specialCommands() []Command {
 	return []Command{
+		&info{
+			cp: C,
+		},
 		&addCommand{
 			cp: C,
 		},
