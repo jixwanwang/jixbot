@@ -14,7 +14,7 @@ func (T *API) newChannelBot(C web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := stream_bot.New(channel, T.nickname, T.oath, T.groupchat, T.texter, T.db)
+	b, err := stream_bot.New(channel, T.nickname, T.oath, T.groupchat, T.texter, T.pasteBin, T.db)
 
 	if err != nil {
 		serveError(w, err)

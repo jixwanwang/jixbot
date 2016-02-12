@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jixwanwang/jixbot/messaging"
+	"github.com/jixwanwang/jixbot/pastebin"
 	"github.com/jixwanwang/jixbot/stream_bot"
 	"github.com/zenazn/goji/web"
 )
@@ -15,24 +16,26 @@ type API struct {
 	nickname  string
 	oath      string
 	groupchat string
-	texter    messaging.Texter
 	db        *sql.DB
+	texter    messaging.Texter
+	pasteBin  pastebin.Client
 
 	bots map[string]*stream_bot.Bot
 }
 
-func NewAPI(channels []string, nickname, oath, groupchat string, texter messaging.Texter, db *sql.DB) (http.Handler, *API, error) {
+func NewAPI(channels []string, nickname, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, db *sql.DB) (http.Handler, *API, error) {
 	api := &API{
 		nickname:  nickname,
 		oath:      oath,
 		groupchat: groupchat,
 		texter:    texter,
+		pasteBin:  pb,
 		db:        db,
 		bots:      map[string]*stream_bot.Bot{},
 	}
 	for _, channel := range channels {
 		log.Printf("loading bot for %s", channel)
-		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, db)
+		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, pb, db)
 
 		if err != nil {
 			return nil, nil, err

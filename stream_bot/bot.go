@@ -10,6 +10,7 @@ import (
 	"github.com/jixwanwang/jixbot/command"
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
+	"github.com/jixwanwang/jixbot/pastebin"
 )
 
 const (
@@ -19,11 +20,12 @@ const (
 type Bot struct {
 	username string
 	oath     string
-	texter   messaging.Texter
 	client   *irc.Client
 	commands *command.CommandPool
 	channel  *channel.Channel
 	db       *sql.DB
+	texter   messaging.Texter
+	pasteBin pastebin.Client
 
 	groupclient *irc.Client
 	groupchat   string
@@ -31,15 +33,16 @@ type Bot struct {
 	shutdown chan int
 }
 
-func New(channelName, username, oath, groupchat string, texter messaging.Texter, db *sql.DB) (*Bot, error) {
+func New(channelName, username, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, db *sql.DB) (*Bot, error) {
 	bot := &Bot{
 		username:  username,
 		oath:      oath,
-		texter:    texter,
 		shutdown:  make(chan int),
 		channel:   channel.New(channelName, db),
 		db:        db,
 		groupchat: groupchat,
+		texter:    texter,
+		pasteBin:  pb,
 	}
 
 	log.Printf("starting up")
@@ -79,7 +82,7 @@ func (B *Bot) startup() {
 	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
 	B.groupclient, _ = irc.New("192.16.64.212:443", 10)
 	B.reloadClients()
-	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.db)
+	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
 }
 
 func (B *Bot) reloadClients() {

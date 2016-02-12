@@ -9,6 +9,7 @@ import (
 	"github.com/jixwanwang/jixbot/api"
 	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/messaging"
+	"github.com/jixwanwang/jixbot/pastebin"
 	"github.com/zenazn/goji/graceful"
 )
 
@@ -30,12 +31,15 @@ func main() {
 	password := os.Getenv("DB_PASS")
 	groupchat := os.Getenv("GROUPCHAT")
 
+	pastebin_key := os.Getenv("PASTEBIN_API_KEY")
+
 	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
 		log.Fatalf("Failed to create db: %s", err.Error())
 	}
 
 	texter := messaging.NewTexter(twilioAccount, twilioSecret, twilioNumber, myNumber)
+	pasteBin := pastebin.NewClient(pastebin_key)
 
 	channels := []string{}
 	rows, err := db.Query("SELECT DISTINCT(channel) FROM commands")
@@ -52,7 +56,7 @@ func main() {
 	rows.Close()
 	log.Printf("%v", channels)
 
-	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, db)
+	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, pasteBin, db)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

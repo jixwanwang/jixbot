@@ -7,14 +7,16 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
+	"github.com/jixwanwang/jixbot/pastebin"
 )
 
 type CommandPool struct {
-	channel *channel.Channel
-	irc     *irc.Client
-	ircW    *irc.Client
-	texter  messaging.Texter
-	db      *sql.DB
+	channel  *channel.Channel
+	irc      *irc.Client
+	ircW     *irc.Client
+	texter   messaging.Texter
+	pasteBin pastebin.Client
+	db       *sql.DB
 
 	specials       []Command
 	enabled        map[string]bool
@@ -25,13 +27,14 @@ type CommandPool struct {
 	subOnly bool
 }
 
-func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, db *sql.DB) *CommandPool {
+func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, pasteBin pastebin.Client, db *sql.DB) *CommandPool {
 	cp := &CommandPool{
-		channel: channel,
-		irc:     irc,
-		ircW:    ircW,
-		db:      db,
-		texter:  texter,
+		channel:  channel,
+		irc:      irc,
+		ircW:     ircW,
+		db:       db,
+		texter:   texter,
+		pasteBin: pasteBin,
 	}
 
 	globals := cp.loadTextCommands(globalChannel)
@@ -144,6 +147,9 @@ func (C *CommandPool) specialCommands() []Command {
 			cp: C,
 		},
 		&modonly{
+			cp: C,
+		},
+		&commandList{
 			cp: C,
 		},
 	}
