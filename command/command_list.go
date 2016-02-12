@@ -32,7 +32,7 @@ func (T *commandList) Response(username, message string, whisper bool) {
 	}
 
 	clearance := T.cp.channel.GetLevel(username)
-	_, err = T.commands.parse(message, clearance)
+	_, err := T.commands.parse(message, clearance)
 	if err == nil {
 		commands := "command \t| response"
 		for _, c := range T.cp.commands {
