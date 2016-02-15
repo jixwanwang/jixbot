@@ -184,6 +184,19 @@ func (C *CommandPool) ActivateCommand(command string) {
 }
 
 func (C *CommandPool) DeleteCommand(command string) {
+	exists := false
+	for _, c := range C.specials {
+		if c.ID() == command {
+			exists = true
+			C.enabled[command] = false
+			break
+		}
+	}
+
+	if !exists {
+		return
+	}
+
 	C.db.Exec("DELETE FROM commands WHERE channel=$1 AND command=$2", C.channel.GetChannelName(), command)
 }
 
