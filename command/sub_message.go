@@ -36,12 +36,12 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
 		T.cp.Say(fmt.Sprintf("Thank you for subscribing %s, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
 
-		viewer := T.cp.channel.ViewerList.FindViewer(username)
-		if !ok {
-			return
-		}
+		// viewer := T.cp.channel.ViewerList.FindViewer(username)
+		// if !ok {
+		// 	return
+		// }
 
-		T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
+		// T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
 	} else if strings.Index(msg, "subscribed for ") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		msg = msg[strings.Index(msg, " ")+1:]
@@ -67,7 +67,7 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 
 		T.cp.Say(fmt.Sprintf("Thank you %s for re-subscribing, for %v months! %s", sub, months, emotes))
 
-		viewer := T.cp.channel.ViewerList.FindViewer(username)
-		T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
+		// viewer := T.cp.channel.ViewerList.FindViewer(username)
+		// T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
 	}
 }
