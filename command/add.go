@@ -108,7 +108,7 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		}
 	}
 
-	T.cp.db.Exec("INSERT INTO textcommands (channel, command, message, clearance) VALUES ($1,$2,$3,$4,$5)", T.cp.channel.GetChannelName(), comm.command, comm.response, comm.clearance, comm.cooldown.Seconds)
+	T.cp.db.Exec("INSERT INTO textcommands (channel, command, message, clearance, cooldown) VALUES ($1,$2,$3,$4,$5)", T.cp.channel.GetChannelName(), comm.command, comm.response, comm.clearance, comm.cooldown.Seconds)
 	T.cp.commands = append(T.cp.commands, comm)
 	T.cp.Say(fmt.Sprintf("@%s Command %s created", username, comm.command))
 }
