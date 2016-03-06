@@ -105,7 +105,7 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 
 	clearance := T.cp.channel.GetLevel(username)
 	args, err := T.comm.parse(message, clearance)
-	if err == nil && (len(args) == T.numArgs || len(args) == T.numArgs-1) {
+	if err == nil && len(args) >= T.numArgs-1 {
 		responseArgs := []interface{}{}
 		for i := 0; i < T.numReplaces; i++ {
 			if arg, ok := T.argMappings[i]; ok {
