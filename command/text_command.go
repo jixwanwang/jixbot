@@ -105,11 +105,15 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 
 	clearance := T.cp.channel.GetLevel(username)
 	args, err := T.comm.parse(message, clearance)
-	if err == nil && len(args) == T.numArgs {
+	if err == nil && (len(args) == T.numArgs || len(args) == T.numArgs-1) {
 		responseArgs := []interface{}{}
 		for i := 0; i < T.numReplaces; i++ {
 			if arg, ok := T.argMappings[i]; ok {
-				responseArgs = append(responseArgs, args[arg])
+				if arg == len(args) {
+					responseArgs = append(responseArgs, "")
+				} else {
+					responseArgs = append(responseArgs, args[arg])
+				}
 			} else if _, ok := T.userMappings[i]; ok {
 				responseArgs = append(responseArgs, username)
 			}

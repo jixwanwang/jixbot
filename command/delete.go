@@ -35,10 +35,6 @@ func (T *deleteCommand) Response(username, message string, whisper bool) {
 
 	remaining = strings.ToLower(strings.TrimSpace(remaining))
 
-	if remaining[:1] != "!" {
-		return
-	}
-
 	for i, c := range T.cp.commands {
 		if c.command == remaining {
 			T.cp.db.Exec("DELETE FROM textcommands WHERE channel=$1 AND command=$2", T.cp.channel.GetChannelName(), remaining)
