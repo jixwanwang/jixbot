@@ -3,6 +3,7 @@ package command
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/irc"
@@ -59,21 +60,27 @@ func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter mess
 func (C *CommandPool) loadTextCommands(channelName string) []*textCommand {
 	commands := []*textCommand{}
 
-	rows, err := C.db.Query("SELECT command, message, clearance FROM textcommands WHERE channel=$1", channelName)
+	rows, err := C.db.Query("SELECT command, message, clearance, cooldown FROM textcommands WHERE channel=$1", channelName)
 	if err != nil {
 		log.Printf("Couldn't read text commands")
 		return commands
 	}
 	for rows.Next() {
 		var comm, message string
-		var clearance int
-		rows.Scan(&comm, &message, &clearance)
+		var clearance, cd int
+		rows.Scan(&comm, &message, &clearance, &cd)
+
+		cooldown := time.Duration(cd) * time.Second
+		if cd == 0 {
+			cooldown = defaultCooldown
+		}
 
 		command := &textCommand{
 			cp:        C,
 			clearance: channel.Level(clearance),
 			command:   comm,
 			response:  message,
+			cooldown:  cooldown,
 		}
 		command.Init()
 		commands = append(commands, command)
