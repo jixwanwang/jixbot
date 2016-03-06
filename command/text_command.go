@@ -32,12 +32,22 @@ type textCommand struct {
 func (T *textCommand) Init() {
 	T.ValidateArguments()
 
-	T.comm = &subCommand{
-		command:   T.command,
-		numArgs:   T.numArgs,
-		cooldown:  T.cooldown,
-		clearance: T.clearance,
+	if T.numArgs > 0 {
+		T.comm = &subCommand{
+			command:   T.command,
+			numArgs:   T.numArgs - 1,
+			cooldown:  T.cooldown,
+			clearance: T.clearance,
+		}
+	} else {
+		T.comm = &subCommand{
+			command:   T.command,
+			numArgs:   T.numArgs,
+			cooldown:  T.cooldown,
+			clearance: T.clearance,
+		}
 	}
+
 }
 
 func (T *textCommand) ValidateArguments() bool {
@@ -95,7 +105,7 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 
 	clearance := T.cp.channel.GetLevel(username)
 	args, err := T.comm.parse(message, clearance)
-	if err == nil {
+	if err == nil && len(args) == T.numArgs {
 		responseArgs := []interface{}{}
 		for i := 0; i < T.numReplaces; i++ {
 			if arg, ok := T.argMappings[i]; ok {
