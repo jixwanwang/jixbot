@@ -3,7 +3,6 @@ package irc
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -55,7 +54,6 @@ func (C *Client) Reload() error {
 
 func (C *Client) Send(msg string) {
 	C.socket.Write([]byte(msg + "\r\n"))
-	log.Printf("< %s", msg)
 }
 
 func (C *Client) Say(channel, msg string) {

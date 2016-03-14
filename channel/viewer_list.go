@@ -1,9 +1,6 @@
 package channel
 
-import (
-	"database/sql"
-	"log"
-)
+import "database/sql"
 
 type Level int
 
@@ -172,7 +169,6 @@ func (V *ViewerList) GetLevel(username string) Level {
 }
 
 func (V *ViewerList) Flush() {
-	log.Printf("Flushing viewerlist")
 	for _, v := range V.viewers {
 		if v.updated {
 			v.save()

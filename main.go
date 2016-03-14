@@ -54,7 +54,7 @@ func main() {
 		}
 	}
 	rows.Close()
-	log.Printf("%v", channels)
+	log.Printf("Channels being loaded: %v", channels)
 
 	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, pasteBin, db)
 	if err != nil {

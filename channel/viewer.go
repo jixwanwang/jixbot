@@ -57,7 +57,6 @@ func (V *Viewer) lookupBrawlWins() map[int]int {
 
 	rows, err := V.manager.db.Query("SELECT season, wins FROM brawlwins WHERE viewer_id=$1", V.id)
 	if err != nil {
-		log.Printf("couldn't find brawlwins for viewer with id %d", V.id)
 		return wins
 	}
 	for rows.Next() {
@@ -90,7 +89,6 @@ func (V *Viewer) GetLinesTyped() int {
 			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='lines_typed' AND viewer_id=$1", V.id)
 
 			if err := row.Scan(&V.linesTyped); err != nil {
-				log.Printf("couldn't find lines typed for viewer with id %d", V.id)
 				V.linesTyped = 0
 			}
 		} else {
@@ -111,7 +109,6 @@ func (V *Viewer) GetTimeSpent() int {
 			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='time' AND viewer_id=$1", V.id)
 
 			if err := row.Scan(&V.timeSpent); err != nil {
-				log.Printf("couldn't find time spent for viewer with id %d", V.id)
 				V.timeSpent = 0
 			}
 		} else {
@@ -132,7 +129,6 @@ func (V *Viewer) GetMoney() int {
 			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='money' AND viewer_id=$1", V.id)
 
 			if err := row.Scan(&V.money); err != nil {
-				log.Printf("couldn't find money for viewer with id %d", V.id)
 				V.money = 0
 			}
 		} else {
@@ -150,6 +146,16 @@ func (V *Viewer) AddMoney(amount int) {
 	V.updated = true
 }
 
+// TO DELETE DUPED BRAWL WINS:
+/*
+delete from brawlwins where id in
+	(select id from
+		(select *, row_number() OVER (ORDER BY viewer_id ASC) as row from brawlwins otr where
+			(select count(*) from brawlwins inr where otr.viewer_id=inr.viewer_id and otr.season=inr.season and otr.channel=inr.channel) > 1
+		ORDER BY viewer_id ASC) as dupes
+	where dupes.row %2=0);
+*/
+
 func (V *Viewer) save() {
 	if _, ok := blacklistedUsers[V.Username]; ok {
 		V.Reset()
@@ -164,7 +170,6 @@ func (V *Viewer) save() {
 				log.Printf("failed to get id of new user: %s", err.Error())
 			}
 			V.id = id
-			log.Printf("created new viewer with id %d, username %s", V.id, V.Username)
 		}
 		if V.brawlsWon != nil {
 			for season, wins := range V.brawlsWon {
@@ -191,6 +196,5 @@ func (V *Viewer) save() {
 			V.manager.db.Exec(query, V.id, V.timeSpent)
 		}
 		V.updated = false
-		log.Printf("saved user %s", V.Username)
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
-	"github.com/jixwanwang/jixbot/stats"
 )
 
 type money struct {
@@ -99,24 +98,6 @@ func (T *money) Response(username, message string, whisper bool) {
 	}
 
 	return
-}
-
-type moneySortInterface struct {
-	viewers []stats.Viewer
-}
-
-func (V *moneySortInterface) Len() int {
-	return len(V.viewers)
-}
-
-func (V *moneySortInterface) Less(i, j int) bool {
-	return V.viewers[i].GetMoney() > V.viewers[j].GetMoney()
-}
-
-func (V *moneySortInterface) Swap(i, j int) {
-	oldi := V.viewers[i]
-	V.viewers[i] = V.viewers[j]
-	V.viewers[j] = oldi
 }
 
 func (T *money) calculateRichest() string {

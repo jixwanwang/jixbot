@@ -45,7 +45,7 @@ func New(channelName, username, oath, groupchat string, texter messaging.Texter,
 		pasteBin:  pb,
 	}
 
-	log.Printf("starting up")
+	log.Printf("starting up for %v", channelName)
 	bot.startup()
 
 	return bot, nil
@@ -138,7 +138,7 @@ func (B *Bot) Start() {
 				lastSpace := strings.LastIndex(e.Message, " ")
 				username := e.Message[lastSpace+1:]
 				plus := e.Message[lastSpace-2 : lastSpace-1]
-				log.Printf("%s did %s as a mod", username, plus)
+
 				if plus == "+" {
 					B.channel.ViewerList.AddMod(username)
 				} else {
@@ -153,11 +153,9 @@ func (B *Bot) Start() {
 				isMod, ok := e.Tags["user-type"]
 				if ok && isMod == "mod" {
 					B.channel.ViewerList.AddMod(username)
-					log.Printf("%s did + as a mod", username)
 				}
 				isSub, ok := e.Tags["subscriber"]
 				if ok && isSub == "1" {
-					log.Printf("%s is a subscriber", username)
 					B.channel.ViewerList.SetSubscriber(username)
 				}
 				msg := strings.TrimPrefix(e.Message, "#"+B.channel.GetChannelName()+" :")
@@ -171,22 +169,17 @@ func (B *Bot) Start() {
 						// parts := strings.Split(special, " ")
 						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
 					} else {
-						log.Printf("jtv said: %s", special)
 					}
 				} else if username == "twitchnotify" {
-					log.Printf("TWITCHNOTIFY SAYS: %s", msg)
 					B.processMessage(username, msg)
 				} else if msg == e.Message {
 					// Not of the channel, must be group chat
 					msg = strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
-					log.Printf("%s said in group chat: %s", username, msg)
 				} else {
 					B.processMessage(username, msg)
-					log.Printf("%s said: %s", username, msg)
 				}
 
 			default: //ignore
-				log.Printf("Unknown: %v", e)
 			}
 		// Whispers
 		case e := <-groupreads:
@@ -201,16 +194,13 @@ func (B *Bot) Start() {
 				username := fromToUsername(e.From)
 				msg := strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
 				B.processMessage(username, msg)
-				log.Printf("%s said in group chat: %s", username, msg)
 			case "WHISPER":
 				from := fromToUsername(e.From)
 				space := strings.Index(e.Message, " :")
 				to := e.Message[:space]
 				msg := strings.TrimPrefix(e.Message, to+" :")
-				log.Printf("%s whispered to %s: %s", from, to, msg)
 				B.processWhisper(from, msg)
 			default: //ignore
-				log.Printf("Don't care about this group chat message: %v", e)
 			}
 		}
 	}

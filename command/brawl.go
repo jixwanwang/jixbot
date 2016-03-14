@@ -33,7 +33,6 @@ func (T *brawl) Init() {
 		log.Printf("couldn't determine the brawl season, assuming to be 1")
 		T.season = 1
 	}
-	log.Printf("The current brawl season is %d", T.season)
 
 	// username to weapon mapping
 	T.brawlers = map[string]string{}
@@ -222,24 +221,6 @@ type brawlWin struct {
 	wins     int
 }
 
-type viewerBrawlerInterface struct {
-	viewers []brawlWin
-}
-
-func (V *viewerBrawlerInterface) Len() int {
-	return len(V.viewers)
-}
-
-func (V *viewerBrawlerInterface) Less(i, j int) bool {
-	return V.viewers[i].wins > V.viewers[j].wins
-}
-
-func (V *viewerBrawlerInterface) Swap(i, j int) {
-	oldi := V.viewers[i]
-	V.viewers[i] = V.viewers[j]
-	V.viewers[j] = oldi
-}
-
 func (T *brawl) calculateBrawlStats(season int) string {
 	output := ""
 	var rows *sql.Rows
@@ -267,7 +248,6 @@ func (T *brawl) calculateBrawlStats(season int) string {
 	var wins int
 	for rows.Next() {
 		err := rows.Scan(&wins, &username)
-		log.Printf("%d, %s", wins, username)
 		if err != nil {
 			continue
 		}

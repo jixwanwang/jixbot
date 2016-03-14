@@ -86,11 +86,6 @@ func (T *textCommand) ValidateArguments() bool {
 		}
 	}
 
-	log.Printf("response %s", T.response)
-	log.Printf("num args %v", T.numArgs)
-	log.Printf("arg mappings %v", T.argMappings)
-	log.Printf("user mappings %v", T.userMappings)
-
 	return true
 }
 

@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -35,10 +34,6 @@ type subCommand struct {
 func (C *subCommand) parse(message string, clearance channel.Level) ([]string, error) {
 	args := []string{}
 
-	if strings.Index(strings.ToLower(message), C.command) >= 0 {
-		log.Printf("%s called with clearance %s", C.command, clearance)
-	}
-
 	if clearance < C.clearance {
 		return args, NotPermittedError
 	}
@@ -50,7 +45,7 @@ func (C *subCommand) parse(message string, clearance channel.Level) ([]string, e
 	}
 
 	parts := strings.Split(message, " ")
-	if parts[0] != C.command {
+	if strings.ToLower(parts[0]) != C.command {
 		return args, BadCommandError
 	}
 

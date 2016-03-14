@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type Channel struct {
 	Currency         string
 	SubName          string
 	ComboTrigger     string
+	ComboTriggers    []string
 	LineTypedReward  int
 	MinuteSpentAward int
 	Emotes           []string
@@ -36,6 +38,7 @@ func New(channel string, db *sql.DB) *Channel {
 	c.Currency = "Coin"
 	c.SubName = "subscribers"
 	c.ComboTrigger = "PogChamp"
+	c.ComboTriggers = []string{"PogChamp"}
 	if err != nil {
 		log.Printf("couldn't get channel_properties %s", err.Error())
 	}
@@ -107,10 +110,13 @@ func (V *Channel) SetProperty(k, v string) {
 		V.SubName = v
 	} else if k == "combo_trigger" {
 		V.ComboTrigger = v
+	} else if k == "combo_triggers" {
+		V.ComboTriggers = strings.Split(v, ",")
 	} else if k == "line_typed_reward" {
 		V.LineTypedReward, _ = strconv.Atoi(v)
 	} else if k == "minute_spent_reward" {
 		V.MinuteSpentAward, _ = strconv.Atoi(v)
+
 	} else {
 		valid = false
 	}
