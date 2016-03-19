@@ -2,8 +2,11 @@ package stream_bot
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
+	"net/http"
 	"strings"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -79,7 +82,25 @@ func (B *Bot) GetProperties() map[string]interface{} {
 }
 
 func (B *Bot) startup() {
-	B.client, _ = irc.New("irc.twitch.tv:6667", 10)
+	chatServer := "irc.chat.twitch.tv:80"
+
+	// Retrieve servers for the channel
+	resp, err := http.Get("http://tmi.twitch.tv/servers?channel=" + B.channel.GetChannelName())
+	if err == nil {
+		defer resp.Body.Close()
+		var m map[string]interface{}
+		dec := json.NewDecoder(resp.Body)
+		err := dec.Decode(&m)
+		if err == nil {
+			servers, ok := m["servers"].([]interface{})
+			if ok {
+				chatServer = fmt.Sprintf("%v", servers[rand.Intn(len(servers))])
+			}
+		}
+	}
+	log.Printf("chat server for %s: %s", B.channel.GetChannelName(), chatServer)
+
+	B.client, _ = irc.New(chatServer, 10)
 	B.groupclient, _ = irc.New("192.16.64.212:443", 10)
 	B.reloadClients()
 	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
