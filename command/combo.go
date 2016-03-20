@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -31,11 +30,8 @@ func (T *combo) Response(username, message string, whisper bool) {
 		return
 	}
 
-	log.Printf("COMBO start------")
-
 	// TODO: make sub only maybe?
 	if T.active && time.Since(T.lastCombo).Minutes() > 3 {
-		log.Printf("COMBO deactivate")
 		T.active = false
 		T.activeCombo = ""
 	}
@@ -55,18 +51,15 @@ func (T *combo) Response(username, message string, whisper bool) {
 		}
 	}
 
-	log.Printf("COMBO match? %v", matchesCombo)
 	if matchesCombo {
 		if !T.active {
 			if time.Since(T.lastCombo).Minutes() > 3 {
-				log.Printf("COMBO initialize")
 				T.comboers = map[string]bool{}
 				T.lastCombo = time.Now()
 				T.comboers[username] = true
 				T.active = true
 			}
 		} else if time.Since(T.lastCombo).Seconds() < 15 {
-			log.Printf("COMBO continued")
 			if _, ok := T.comboers[username]; !ok {
 				T.comboers[username] = true
 				T.lastCombo = time.Now()
@@ -91,13 +84,11 @@ func (T *combo) Response(username, message string, whisper bool) {
 				}
 			}
 		} else {
-			log.Printf("COMBO expired")
 			T.lastCombo = time.Now()
 			if len(T.comboers) < 5 {
 				T.comboers = map[string]bool{}
 				T.comboers[username] = true
 			} else {
-				log.Printf("COMBO broken")
 				for c := range T.comboers {
 					viewer, in := T.cp.channel.InChannel(c)
 					if in {
@@ -110,8 +101,6 @@ func (T *combo) Response(username, message string, whisper bool) {
 			}
 		}
 	}
-
-	log.Printf("COMBO end------")
 
 	// if index := strings.Index(message, T.cp.channel.ComboTrigger); index >= 0 {
 	// 	if !T.active {

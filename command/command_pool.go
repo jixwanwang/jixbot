@@ -156,6 +156,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&modonly{
 			cp: C,
 		},
+		&linesTyped{
+			cp: C,
+		},
 		&commandList{
 			cp: C,
 		},

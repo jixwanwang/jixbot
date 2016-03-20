@@ -71,13 +71,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("[handler] Failed to bind to %s: %s", addr, err)
 	}
-	log.Printf("[handler] Listening on %s", addr)
 
 	err = graceful.Serve(l, http.DefaultServeMux)
 	if err != nil {
 		log.Fatalf("[handler] %s", err)
 	}
-	log.Printf("[handler] Draining server")
 	graceful.Wait()
-	log.Printf("[handler] Draining complete")
 }
