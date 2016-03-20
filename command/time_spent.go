@@ -85,7 +85,7 @@ func timeSpentString(minutes int) string {
 func (T *timeSpent) calculateLongest() string {
 	rows, err := T.cp.db.Query(`SELECT sum(c.count) as time, v.username FROM counts AS c `+
 		`JOIN viewers AS v ON v.id = c.viewer_id `+
-		`WHERE c.type='time' AND v.channel=$1 `+
+		`WHERE c.type='time' AND v.channel=$1`+
 		`GROUP BY v.username ORDER BY time DESC LIMIT 10`, T.cp.channel.GetChannelName())
 	if err != nil {
 		log.Printf("ERROR: %s", err.Error())

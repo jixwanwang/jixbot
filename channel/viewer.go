@@ -7,6 +7,8 @@ var blacklistedUsers = map[string]int{
 	"moobot":       0,
 	"jixbot":       0,
 	"twitchnotify": 0,
+	"revlobot":     0,
+	"xanbot":       0,
 }
 
 // Represents a viewer in a single stream.
