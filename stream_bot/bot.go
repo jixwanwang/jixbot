@@ -101,7 +101,9 @@ func (B *Bot) startup() {
 	log.Printf("chat server for %s: %s", B.channel.GetChannelName(), chatServer)
 
 	B.client, _ = irc.New(chatServer, 10)
-	B.groupclient, _ = irc.New("192.16.64.212:443", 10)
+	log.Printf("Connected to main irc")
+	B.groupclient, _ = irc.New("irc.chat.twitch.tv:80", 10)
+	log.Printf("connected to group irc")
 	B.reloadClients()
 	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
 }
