@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jixwanwang/jixbot/db"
 )
 
 type Channel struct {
@@ -25,16 +27,16 @@ type Channel struct {
 	db *sql.DB
 }
 
-func New(channel string, db *sql.DB) *Channel {
+func New(channel string, sqlDB *sql.DB) *Channel {
 	c := &Channel{
 		Username:    channel,
 		Broadcaster: NewBroadcaster(channel),
-		ViewerList:  NewViewerList(channel, db),
-		db:          db,
+		ViewerList:  NewViewerList(channel, db.NewDB(sqlDB)),
+		db:          sqlDB,
 	}
 
 	log.Printf("getting channel properties for %s", channel)
-	rows, err := db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
+	rows, err := sqlDB.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
 	c.Currency = "Coin"
 	c.SubName = "subscribers"
 	c.ComboTrigger = "PogChamp"
@@ -51,7 +53,7 @@ func New(channel string, db *sql.DB) *Channel {
 
 	log.Printf("getting emotes properties for %s", channel)
 	emotes := []string{}
-	rows, err = db.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
+	rows, err = sqlDB.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
 	if err != nil {
 		log.Printf("couldn't get emotes %s", err.Error())
 	}
@@ -80,9 +82,9 @@ func New(channel string, db *sql.DB) *Channel {
 		ticker := time.NewTicker(1 * time.Minute)
 		for {
 			<-ticker.C
-			if c.Broadcaster.Online {
-				c.AddTime(1)
-			}
+			// if c.Broadcaster.Online {
+			c.AddTime(1)
+			// }
 			c.ViewerList.Flush()
 		}
 	}()
@@ -116,7 +118,6 @@ func (V *Channel) SetProperty(k, v string) {
 		V.LineTypedReward, _ = strconv.Atoi(v)
 	} else if k == "minute_spent_reward" {
 		V.MinuteSpentAward, _ = strconv.Atoi(v)
-
 	} else {
 		valid = false
 	}
@@ -162,10 +163,10 @@ func (V *Channel) RecordMessage(username, msg string) {
 		v = V.ViewerList.AddViewer(username)
 	}
 
-	if V.Broadcaster.Online {
-		v.AddLineTyped()
-		v.AddMoney(V.LineTypedReward)
-	}
+	// if V.Broadcaster.Online {
+	v.AddLineTyped()
+	v.AddMoney(V.LineTypedReward)
+	// }
 }
 
 func (V *Channel) AddTime(minutes int) {
@@ -176,5 +177,6 @@ func (V *Channel) AddTime(minutes int) {
 }
 
 func (V *Channel) Flush() {
+	log.Printf("Flushing viewerlist")
 	V.ViewerList.Flush()
 }

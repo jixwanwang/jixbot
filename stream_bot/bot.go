@@ -118,6 +118,8 @@ func (B *Bot) reloadClients() {
 	B.client.Send("CAP REQ :twitch.tv/membership")
 	B.client.Send("CAP REQ :twitch.tv/tags")
 
+	B.client.Send(fmt.Sprintf("JOIN #%s", B.username))
+
 	err = B.groupclient.Reload()
 	if err != nil {
 		log.Printf("%s", err.Error())
