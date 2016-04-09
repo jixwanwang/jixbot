@@ -82,10 +82,23 @@ func (B *Bot) GetProperties() map[string]interface{} {
 }
 
 func (B *Bot) startup() {
-	chatServer := "irc.chat.twitch.tv:80"
+	chatServer := readIRCServer("http://tmi.twitch.tv/servers?channel="+B.channel.GetChannelName(), "irc.chat.twitch.tv:80")
+	log.Printf("chat server for %s: %s", B.channel.GetChannelName(), chatServer)
 
-	// Retrieve servers for the channel
-	resp, err := http.Get("http://tmi.twitch.tv/servers?channel=" + B.channel.GetChannelName())
+	groupServer := readIRCServer("http://tmi.twitch.tv/servers?cluster=group", "irc.chat.twitch.tv:80")
+	log.Printf("group chat server for %s: %s", B.channel.GetChannelName(), groupServer)
+
+	B.client, _ = irc.New(chatServer, 10)
+	log.Printf("Connected to chat irc")
+	B.groupclient, _ = irc.New(groupServer, 10)
+	log.Printf("connected to group irc")
+
+	B.reloadClients()
+	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
+}
+
+func readIRCServer(url, def string) string {
+	resp, err := http.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
 		var m map[string]interface{}
@@ -94,18 +107,11 @@ func (B *Bot) startup() {
 		if err == nil {
 			servers, ok := m["servers"].([]interface{})
 			if ok {
-				chatServer = fmt.Sprintf("%v", servers[rand.Intn(len(servers))])
+				return fmt.Sprintf("%v", servers[rand.Intn(len(servers))])
 			}
 		}
 	}
-	log.Printf("chat server for %s: %s", B.channel.GetChannelName(), chatServer)
-
-	B.client, _ = irc.New(chatServer, 10)
-	log.Printf("Connected to main irc")
-	B.groupclient, _ = irc.New("irc.chat.twitch.tv:80", 10)
-	log.Printf("connected to group irc")
-	B.reloadClients()
-	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
+	return def
 }
 
 func (B *Bot) reloadClients() {
