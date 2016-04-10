@@ -3,7 +3,6 @@ package irc
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -99,7 +98,6 @@ func (C *Client) ReadLoop() chan Event {
 				events <- Event{Err: err}
 				continue
 			}
-			log.Printf("%s", msg)
 
 			tags := map[string]string{}
 			// Parse tags

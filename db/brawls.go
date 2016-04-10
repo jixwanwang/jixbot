@@ -1,9 +1,6 @@
 package db
 
-import (
-	"database/sql"
-	"log"
-)
+import "log"
 
 func (B *dbImpl) GetBrawlSeason(channel string) (season int, err error) {
 	row := B.db.QueryRow("SELECT * FROM (SELECT DISTINCT(season) FROM brawlwins WHERE channel=$1 ORDER BY season DESC) AS seasons LIMIT 1", channel)
@@ -40,41 +37,4 @@ func (B *dbImpl) SetBrawlWins(viewerID int, channel string, wins map[int]int) er
 		}
 	}
 	return nil
-}
-
-func (B *dbImpl) BrawlStats(channel string, season int) ([]Count, error) {
-	var rows *sql.Rows
-	var err error
-	if season > 0 {
-		rows, err = B.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
-			`JOIN viewers AS v ON v.id=b.viewer_id `+
-			`WHERE b.channel=$1 AND b.season=$2 `+
-			`GROUP BY username ORDER BY totalwins DESC LIMIT 50`, channel, season)
-	} else {
-		rows, err = B.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
-			`JOIN viewers AS v ON v.id=b.viewer_id `+
-			`WHERE b.channel=$1 `+
-			`GROUP BY username ORDER BY totalwins DESC LIMIT 50`, channel)
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	brawlWins := []Count{}
-	var username string
-	var wins int
-	for rows.Next() {
-		err := rows.Scan(&wins, &username)
-		if err != nil {
-			continue
-		}
-
-		brawlWins = append(brawlWins, Count{
-			Username: username,
-			Count:    wins,
-		})
-	}
-
-	return brawlWins, nil
 }

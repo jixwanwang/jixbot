@@ -33,6 +33,7 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 		db:        db,
 		bots:      map[string]*stream_bot.Bot{},
 	}
+
 	for _, channel := range channels {
 		log.Printf("loading bot for %s", channel)
 		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, pb, db)

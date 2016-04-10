@@ -37,7 +37,7 @@ func (T *deleteCommand) Response(username, message string, whisper bool) {
 
 	for i, c := range T.cp.commands {
 		if c.command == remaining {
-			T.cp.db.Exec("DELETE FROM textcommands WHERE channel=$1 AND command=$2", T.cp.channel.GetChannelName(), remaining)
+			T.cp.db.DeleteTextCommand(T.cp.channel.GetChannelName(), remaining)
 			T.cp.commands = append(T.cp.commands[:i], T.cp.commands[i+1:]...)
 			T.cp.Say(fmt.Sprintf("@%s Command %s deleted", username, remaining))
 			return

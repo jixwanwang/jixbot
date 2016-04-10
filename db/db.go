@@ -18,14 +18,26 @@ type DB interface {
 	AddChannelEmote(channel, emote string) error
 	DeleteChannelEmote(channel, emote string) error
 
+	GetCommands(channel string) (map[string]bool, error)
+	AddCommand(channel, command string) error
+	DeleteCommand(channel, command string) error
+
+	GetTextCommands(channel string) ([]TextCommand, error)
+	AddTextCommand(channel string, comm TextCommand) error
+	UpdateTextCommand(channel string, comm TextCommand) error
+	DeleteTextCommand(channel, comm string) error
+
 	NewViewer(username, channel string) (id int, err error)
 	FindViewer(username, channel string) (id int, err error)
 
 	GetCount(viewerID int, kind string) (count int, err error)
 	SetCount(viewerID int, kind string, count int) error
+	HighestCount(channel, kind string) ([]Count, error)
 
 	GetBrawlWins(viewerID int) (map[int]int, error)
 	SetBrawlWins(viewerID int, channel string, wins map[int]int) error
+	GetBrawlSeason(channel string) (season int, err error)
+	BrawlStats(channel string, season int) ([]Count, error)
 }
 
 type dbImpl struct {

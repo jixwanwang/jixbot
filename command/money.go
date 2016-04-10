@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -101,22 +100,14 @@ func (T *money) Response(username, message string, whisper bool) {
 }
 
 func (T *money) calculateRichest() string {
-	rows, err := T.cp.db.Query(`SELECT sum(c.count) money, v.username FROM counts AS c `+
-		`JOIN viewers AS v ON v.id = c.viewer_id `+
-		`WHERE c.type='money' AND v.channel=$1 `+
-		`GROUP BY v.username ORDER BY money DESC LIMIT 10`, T.cp.channel.GetChannelName())
+	counts, err := T.cp.db.HighestCount(T.cp.channel.GetChannelName(), "money")
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
 		return ""
 	}
 
-	var viewer string
-	var money int
 	output := "Richest people: "
-	for rows.Next() {
-		rows.Scan(&money, &viewer)
-		output = fmt.Sprintf("%s%s - %d %ss, ", output, viewer, money, T.cp.channel.Currency)
+	for _, c := range counts {
+		output = fmt.Sprintf("%s%s - %d %ss, ", output, c.Username, c.Count, T.cp.channel.Currency)
 	}
-	rows.Close()
 	return output[:len(output)-2]
 }

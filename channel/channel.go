@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"database/sql"
 	"log"
 	"strconv"
 	"strings"
@@ -24,47 +23,35 @@ type Channel struct {
 	MinuteSpentAward int
 	Emotes           []string
 
-	db *sql.DB
+	db db.DB
 }
 
-func New(channel string, sqlDB *sql.DB) *Channel {
+func New(channel string, db db.DB) *Channel {
 	c := &Channel{
 		Username:    channel,
 		Broadcaster: NewBroadcaster(channel),
-		ViewerList:  NewViewerList(channel, db.NewDB(sqlDB)),
-		db:          sqlDB,
+		ViewerList:  NewViewerList(channel, db),
+		db:          db,
 	}
 
 	log.Printf("getting channel properties for %s", channel)
-	rows, err := sqlDB.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
+	properties, err := db.GetChannelProperties(channel)
 	c.Currency = "Coin"
 	c.SubName = "subscribers"
 	c.ComboTrigger = "PogChamp"
 	c.ComboTriggers = []string{"PogChamp"}
-	if err != nil {
-		log.Printf("couldn't get channel_properties %s", err.Error())
-	}
-	for rows.Next() {
-		var k, v string
-		rows.Scan(&k, &v)
-		c.SetProperty(k, v)
-	}
-	rows.Close()
-
-	log.Printf("getting emotes properties for %s", channel)
-	emotes := []string{}
-	rows, err = sqlDB.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
-	if err != nil {
-		log.Printf("couldn't get emotes %s", err.Error())
-	}
-	for rows.Next() {
-		var emote string
-		err := rows.Scan(&emote)
-		if err == nil {
-			emotes = append(emotes, emote)
+	if err == nil {
+		for k, v := range properties {
+			log.Printf("property: %s, %s,", k, v)
+			c.SetProperty(k, v)
 		}
 	}
-	rows.Close()
+
+	log.Printf("getting emotes properties for %s", channel)
+	emotes, err := db.GetChannelEmotes(channel)
+	if err != nil {
+		emotes = []string{}
+	}
 
 	c.Emotes = emotes
 	log.Printf("Loaded emotes %s for %s", emotes, channel)
@@ -122,9 +109,7 @@ func (V *Channel) SetProperty(k, v string) {
 		valid = false
 	}
 	if valid {
-		insert := "INSERT INTO channel_properties (channel, k, v) SELECT $1, $2, $3"
-		upsert := "UPDATE channel_properties SET v=$3 WHERE k=$2 AND channel=$1"
-		V.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.GetChannelName(), k, v)
+		V.db.SetChannelProperty(V.GetChannelName(), k, v)
 	}
 }
 
@@ -145,14 +130,14 @@ func (V *Channel) AddEmote(e string) {
 		}
 	}
 	V.Emotes = append(V.Emotes, e)
-	V.db.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", V.Username, e)
+	V.db.AddChannelEmote(V.GetChannelName(), e)
 }
 
 func (V *Channel) DeleteEmote(e string) {
 	for i, emote := range V.Emotes {
 		if e == emote {
 			V.Emotes = append(V.Emotes[:i], V.Emotes[i+1:]...)
-			V.db.Exec("DELETE FROM emotes WHERE channel=$1 AND emote=$2", V.Username, e)
+			V.db.DeleteChannelEmote(V.GetChannelName(), e)
 		}
 	}
 }
@@ -163,10 +148,10 @@ func (V *Channel) RecordMessage(username, msg string) {
 		v = V.ViewerList.AddViewer(username)
 	}
 
-	// if V.Broadcaster.Online {
-	v.AddLineTyped()
-	v.AddMoney(V.LineTypedReward)
-	// }
+	if V.Broadcaster.Online {
+		v.AddLineTyped()
+		v.AddMoney(V.LineTypedReward)
+	}
 }
 
 func (V *Channel) AddTime(minutes int) {
