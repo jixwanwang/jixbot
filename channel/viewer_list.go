@@ -38,6 +38,7 @@ func NewViewerList(channel string, db db.DB) *ViewerList {
 		viewers: map[string]*Viewer{},
 		staff:   map[string]int{},
 		mods:    map[string]int{},
+		subs:    map[string]int{},
 	}
 
 	return viewers
