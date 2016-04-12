@@ -9,14 +9,13 @@ func (B *dbImpl) NewViewer(username, channel string) (id int, err error) {
 }
 
 func (B *dbImpl) FindViewer(username, channel string) (id int, err error) {
-	row := B.db.QueryRow(`SELECT id FROM viewers WHERE channel=$1 AND username=$2`, channel, username)
+	row := B.db.QueryRow(`SELECT id FROM viewers WHERE channel=$1 AND username=$2 ORDER BY id ASC LIMIT 1`, channel, username)
 	err = row.Scan(&id)
 	return
 }
 
 func (B *dbImpl) GetCount(viewerID int, kind string) (count int, err error) {
 	row := B.db.QueryRow("SELECT count FROM counts WHERE type=$2 AND viewer_id=$1", viewerID, kind)
-
 	err = row.Scan(&count)
 	return
 }

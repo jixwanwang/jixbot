@@ -111,10 +111,11 @@ func (V *ViewerList) FindViewer(username string) *Viewer {
 		manager:    V,
 	}
 
-	id, err := V.db.FindViewer(V.channel, username)
-	if err == nil {
-		viewer.id = id
+	id, err := V.db.FindViewer(username, V.channel)
+	if err != nil {
+		return nil
 	}
+	viewer.id = id
 
 	return viewer
 }
