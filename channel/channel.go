@@ -69,9 +69,9 @@ func New(channel string, db db.DB) *Channel {
 		ticker := time.NewTicker(1 * time.Minute)
 		for {
 			<-ticker.C
-			// if c.Broadcaster.Online {
-			c.AddTime(1)
-			// }
+			if c.Broadcaster.Online {
+				c.AddTime(1)
+			}
 			c.ViewerList.Flush()
 		}
 	}()
