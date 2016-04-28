@@ -22,37 +22,47 @@ const (
 )
 
 type Bot struct {
-	username string
-	oath     string
-	client   *irc.Client
-	commands *command.CommandPool
-	channel  *channel.Channel
-	db       db.DB
-	texter   messaging.Texter
-	pasteBin pastebin.Client
-
-	groupclient *irc.Client
+	username    string
 	groupchat   string
+	client      *irc.Client
+	groupclient *irc.Client
+	commands    *command.CommandPool
+	channel     *channel.Channel
+	db          db.DB
+	texter      messaging.Texter
+	pasteBin    pastebin.Client
 
 	shutdown chan int
 }
 
-func New(channelName, username, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, sqlDB *sql.DB) (*Bot, error) {
+func New(channelName, username, oauth, groupchat string, texter messaging.Texter, pb pastebin.Client, sqlDB *sql.DB) (*Bot, error) {
 	dbInterface := db.NewDB(sqlDB)
 
 	bot := &Bot{
 		username:  username,
-		oath:      oath,
+		groupchat: groupchat,
 		shutdown:  make(chan int),
 		channel:   channel.New(channelName, dbInterface),
 		db:        dbInterface,
-		groupchat: groupchat,
 		texter:    texter,
 		pasteBin:  pb,
 	}
 
 	log.Printf("starting up for %v", channelName)
-	bot.startup()
+
+	chatServer := readIRCServer("http://tmi.twitch.tv/servers?channel="+channelName, "irc.chat.twitch.tv:80")
+	log.Printf("chat server for %s: %s", channelName, chatServer)
+
+	groupServer := readIRCServer("http://tmi.twitch.tv/servers?cluster=group", "irc.chat.twitch.tv:80")
+	log.Printf("group chat server for %s: %s", channelName, groupServer)
+
+	bot.client, _ = irc.New(chatServer, channelName, oauth, username, 10)
+	log.Printf("Connected to chat irc")
+	bot.groupclient, _ = irc.New(groupServer, groupchat, oauth, username, 10)
+	log.Printf("connected to group irc")
+
+	bot.reloadClients()
+	bot.commands = command.NewCommandPool(bot.channel, bot.client, bot.groupclient, texter, pb, dbInterface)
 
 	return bot, nil
 }
@@ -84,22 +94,6 @@ func (B *Bot) GetProperties() map[string]interface{} {
 	return B.channel.GetProperties()
 }
 
-func (B *Bot) startup() {
-	chatServer := readIRCServer("http://tmi.twitch.tv/servers?channel="+B.channel.GetChannelName(), "irc.chat.twitch.tv:80")
-	log.Printf("chat server for %s: %s", B.channel.GetChannelName(), chatServer)
-
-	groupServer := readIRCServer("http://tmi.twitch.tv/servers?cluster=group", "irc.chat.twitch.tv:80")
-	log.Printf("group chat server for %s: %s", B.channel.GetChannelName(), groupServer)
-
-	B.client, _ = irc.New(chatServer, 10)
-	log.Printf("Connected to chat irc")
-	B.groupclient, _ = irc.New(groupServer, 10)
-	log.Printf("connected to group irc")
-
-	B.reloadClients()
-	B.commands = command.NewCommandPool(B.channel, B.client, B.groupclient, B.texter, B.pasteBin, B.db)
-}
-
 func readIRCServer(url, def string) string {
 	resp, err := http.Get(url)
 	if err == nil {
@@ -123,21 +117,10 @@ func (B *Bot) reloadClients() {
 		log.Printf("%s", err.Error())
 	}
 
-	B.client.Send(fmt.Sprintf("PASS %s", B.oath))
-	B.client.Send(fmt.Sprintf("NICK %s", B.username))
-	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel.GetChannelName()))
-	B.client.Send("CAP REQ :twitch.tv/membership")
-	B.client.Send("CAP REQ :twitch.tv/tags")
-
-	B.client.Send(fmt.Sprintf("JOIN #%s", B.username))
-
 	err = B.groupclient.Reload()
 	if err != nil {
 		log.Printf("%s", err.Error())
 	}
-	B.groupclient.Send(fmt.Sprintf("PASS %s", B.oath))
-	B.groupclient.Send(fmt.Sprintf("NICK %s", B.username))
-	B.groupclient.Send("CAP REQ :twitch.tv/commands")
 }
 
 func (B *Bot) Shutdown() {
