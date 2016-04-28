@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -83,22 +82,14 @@ func timeSpentString(minutes int) string {
 }
 
 func (T *timeSpent) calculateLongest() string {
-	rows, err := T.cp.db.Query(`SELECT sum(c.count) as time, v.username FROM counts AS c `+
-		`JOIN viewers AS v ON v.id = c.viewer_id `+
-		`WHERE c.type='time' AND v.channel=$1`+
-		`GROUP BY v.username ORDER BY time DESC LIMIT 10`, T.cp.channel.GetChannelName())
+	counts, err := T.cp.db.HighestCount(T.cp.channel.GetChannelName(), "time")
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
 		return ""
 	}
 
-	var viewer string
-	var time int
 	output := "Longest watchers: "
-	for rows.Next() {
-		rows.Scan(&time, &viewer)
-		output = fmt.Sprintf("%s%s - %d minutes, ", output, viewer, time)
+	for _, c := range counts {
+		output = fmt.Sprintf("%s%s - %d minutes, ", output, c.Username, c.Count)
 	}
-	rows.Close()
 	return output[:len(output)-2]
 }

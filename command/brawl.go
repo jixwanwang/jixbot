@@ -1,7 +1,6 @@
 package command
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
+	"github.com/jixwanwang/jixbot/db"
 )
 
 type brawl struct {
@@ -28,10 +28,12 @@ type brawl struct {
 }
 
 func (T *brawl) Init() {
-	row := T.cp.db.QueryRow("select * from (select distinct(season) from brawlwins where channel=$1 order by season desc) as seasons limit 1", T.cp.channel.GetChannelName())
-	if err := row.Scan(&T.season); err != nil {
+	season, err := T.cp.db.GetBrawlSeason(T.cp.channel.GetChannelName())
+	if err != nil {
 		log.Printf("couldn't determine the brawl season, assuming to be 1")
 		T.season = 1
+	} else {
+		T.season = season
 	}
 
 	// username to weapon mapping
@@ -223,64 +225,29 @@ type brawlWin struct {
 
 func (T *brawl) calculateBrawlStats(season int) string {
 	output := ""
-	var rows *sql.Rows
-	var err error
-	if season > 0 {
-		output = output + fmt.Sprintf("Best brawlers for season %d: ", season)
-		rows, err = T.cp.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
-			`JOIN viewers AS v ON v.id=b.viewer_id `+
-			`WHERE b.channel=$1 AND b.season=$2 `+
-			`GROUP BY username ORDER BY totalwins DESC`, T.cp.channel.GetChannelName(), season)
-	} else {
-		output = output + "All-time best brawlers: "
-		rows, err = T.cp.db.Query(`SELECT sum(wins) totalwins, username FROM brawlwins AS b `+
-			`JOIN viewers AS v ON v.id=b.viewer_id `+
-			`WHERE b.channel=$1 `+
-			`GROUP BY username ORDER BY totalwins DESC`, T.cp.channel.GetChannelName())
-	}
+	brawlWins, err := T.cp.db.BrawlStats(T.cp.channel.GetChannelName(), season)
 	if err != nil {
 		return ""
 	}
 
-	brawlWins := []brawlWin{}
-	foundWinner := false
-	var username string
-	var wins int
-	for rows.Next() {
-		err := rows.Scan(&wins, &username)
-		if err != nil {
-			continue
-		}
-
-		if wins > 0 {
-			foundWinner = true
-		}
-
-		brawlWins = append(brawlWins, brawlWin{
-			username: username,
-			wins:     wins,
-		})
-	}
-	rows.Close()
-
-	if !foundWinner {
+	if len(brawlWins) == 0 {
 		return fmt.Sprintf("No one has won for season %d yet!", season)
 	}
 
-	tiedWinners := []brawlWin{}
+	tiedWinners := []db.Count{}
 	numWins := 10000
 	count := -1
 	for _, w := range brawlWins {
-		if w.wins < numWins {
+		if w.Count < numWins {
 			if len(tiedWinners) != 0 {
 				for _, winner := range tiedWinners {
-					output = fmt.Sprintf("%s%s & ", output, winner.username)
+					output = fmt.Sprintf("%s%s & ", output, winner.Username)
 				}
 				output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
 			}
 
-			tiedWinners = []brawlWin{}
-			numWins = w.wins
+			tiedWinners = []db.Count{}
+			numWins = w.Count
 			count = count + 1
 		}
 
@@ -289,14 +256,14 @@ func (T *brawl) calculateBrawlStats(season int) string {
 			break
 		}
 
-		if w.wins == numWins {
+		if w.Count == numWins {
 			tiedWinners = append(tiedWinners, w)
 		}
 	}
 
 	if len(tiedWinners) != 0 && len(tiedWinners) <= 7 {
 		for _, winner := range tiedWinners {
-			output = fmt.Sprintf("%s%s & ", output, winner.username)
+			output = fmt.Sprintf("%s%s & ", output, winner.Username)
 		}
 		output = fmt.Sprintf("%s (%d wins), ", output[:len(output)-2], numWins)
 	}

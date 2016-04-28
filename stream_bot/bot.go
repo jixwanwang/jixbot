@@ -11,6 +11,7 @@ import (
 
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/command"
+	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
@@ -26,7 +27,7 @@ type Bot struct {
 	client   *irc.Client
 	commands *command.CommandPool
 	channel  *channel.Channel
-	db       *sql.DB
+	db       db.DB
 	texter   messaging.Texter
 	pasteBin pastebin.Client
 
@@ -36,13 +37,15 @@ type Bot struct {
 	shutdown chan int
 }
 
-func New(channelName, username, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, db *sql.DB) (*Bot, error) {
+func New(channelName, username, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, sqlDB *sql.DB) (*Bot, error) {
+	dbInterface := db.NewDB(sqlDB)
+
 	bot := &Bot{
 		username:  username,
 		oath:      oath,
 		shutdown:  make(chan int),
-		channel:   channel.New(channelName, db),
-		db:        db,
+		channel:   channel.New(channelName, dbInterface),
+		db:        dbInterface,
 		groupchat: groupchat,
 		texter:    texter,
 		pasteBin:  pb,
@@ -125,6 +128,8 @@ func (B *Bot) reloadClients() {
 	B.client.Send(fmt.Sprintf("JOIN #%s", B.channel.GetChannelName()))
 	B.client.Send("CAP REQ :twitch.tv/membership")
 	B.client.Send("CAP REQ :twitch.tv/tags")
+
+	B.client.Send(fmt.Sprintf("JOIN #%s", B.username))
 
 	err = B.groupclient.Reload()
 	if err != nil {

@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -59,22 +58,14 @@ func (T *linesTyped) Response(username, message string, whisper bool) {
 }
 
 func (T *linesTyped) calculateChattiest() string {
-	rows, err := T.cp.db.Query(`SELECT sum(c.count) as lines, v.username FROM counts AS c `+
-		`JOIN viewers AS v ON v.id = c.viewer_id `+
-		`WHERE c.type='lines_typed' AND v.channel=$1 `+
-		`GROUP BY v.username ORDER BY lines DESC LIMIT 10`, T.cp.channel.GetChannelName())
+	counts, err := T.cp.db.HighestCount(T.cp.channel.GetChannelName(), "lines_typed")
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
 		return ""
 	}
 
-	var viewer string
-	var lines int
 	output := "Chattiest users: "
-	for rows.Next() {
-		rows.Scan(&lines, &viewer)
-		output = fmt.Sprintf("%s%s - %d lines, ", output, viewer, lines)
+	for _, c := range counts {
+		output = fmt.Sprintf("%s%s - %d lines, ", output, c.Username, c.Count)
 	}
-	rows.Close()
 	return output[:len(output)-2]
 }

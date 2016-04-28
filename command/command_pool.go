@@ -1,11 +1,10 @@
 package command
 
 import (
-	"database/sql"
 	"log"
-	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
+	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
@@ -17,7 +16,7 @@ type CommandPool struct {
 	ircW     *irc.Client
 	texter   messaging.Texter
 	pasteBin pastebin.Client
-	db       *sql.DB
+	db       db.DB
 
 	specials       []Command
 	enabled        map[string]bool
@@ -28,7 +27,7 @@ type CommandPool struct {
 	subOnly bool
 }
 
-func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, pasteBin pastebin.Client, db *sql.DB) *CommandPool {
+func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, pasteBin pastebin.Client, db db.DB) *CommandPool {
 	cp := &CommandPool{
 		channel:  channel,
 		irc:      irc,
@@ -58,56 +57,36 @@ func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter mess
 }
 
 func (C *CommandPool) loadTextCommands(channelName string) []*textCommand {
-	commands := []*textCommand{}
-
-	rows, err := C.db.Query("SELECT command, message, clearance, cooldown FROM textcommands WHERE channel=$1", channelName)
+	comms, err := C.db.GetTextCommands(channelName)
 	if err != nil {
-		log.Printf("Couldn't read text commands")
-		return commands
+		comms = []db.TextCommand{}
 	}
-	for rows.Next() {
-		var comm, message string
-		var clearance, cd int
-		rows.Scan(&comm, &message, &clearance, &cd)
 
-		cooldown := time.Duration(cd) * time.Second
-		if cd == 0 {
-			cooldown = defaultCooldown
-		}
-
+	commands := []*textCommand{}
+	for _, c := range comms {
 		command := &textCommand{
 			cp:        C,
-			clearance: channel.Level(clearance),
-			command:   comm,
-			response:  message,
-			cooldown:  cooldown,
+			clearance: channel.Level(c.Clearance),
+			command:   c.Command,
+			response:  c.Response,
+			cooldown:  c.Cooldown,
 		}
 		command.Init()
 		commands = append(commands, command)
 	}
-	rows.Close()
 
 	return commands
 }
 
 func (C *CommandPool) enabledCommands() map[string]bool {
-	allowed := map[string]bool{}
+	allowed, err := C.db.GetCommands(C.channel.GetChannelName())
+	if err != nil {
+		log.Printf("Couldn't read commands: %s", err.Error())
+		allowed = map[string]bool{}
+	}
 
 	// Always enable info command
 	allowed["info"] = true
-
-	rows, err := C.db.Query("SELECT command FROM commands WHERE channel=$1", C.channel.GetChannelName())
-	if err != nil {
-		log.Printf("Couldn't read commands")
-		return allowed
-	}
-
-	for rows.Next() {
-		var comm string
-		if err := rows.Scan(&comm); err == nil {
-			allowed[comm] = true
-		}
-	}
 
 	return allowed
 }
@@ -190,7 +169,7 @@ func (C *CommandPool) ActivateCommand(command string) {
 		return
 	}
 
-	C.db.Exec("INSERT INTO commands (channel, command) VALUES ($1, $2)", C.channel.GetChannelName(), command)
+	C.db.AddCommand(C.channel.GetChannelName(), command)
 }
 
 func (C *CommandPool) DeleteCommand(command string) {
@@ -207,7 +186,7 @@ func (C *CommandPool) DeleteCommand(command string) {
 		return
 	}
 
-	C.db.Exec("DELETE FROM commands WHERE channel=$1 AND command=$2", C.channel.GetChannelName(), command)
+	C.db.DeleteCommand(C.channel.GetChannelName(), command)
 }
 
 func (C *CommandPool) Say(message string) {

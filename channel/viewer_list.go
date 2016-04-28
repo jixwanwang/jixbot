@@ -1,6 +1,6 @@
 package channel
 
-import "database/sql"
+import "github.com/jixwanwang/jixbot/db"
 
 type Level int
 
@@ -19,23 +19,26 @@ func init() {
 	// TODO: Load known staff
 }
 
+// Represents the list of viewers that are in a channel.
 type ViewerList struct {
-	channel             string
-	db                  *sql.DB
-	viewers             map[string]*Viewer
-	staff               map[string]int
-	mods                map[string]int
-	lotteryContributers map[string]int
+	channel string
+
+	viewers map[string]*Viewer
+	staff   map[string]int
+	mods    map[string]int
+	subs    map[string]int
+
+	db db.DB
 }
 
-func NewViewerList(channel string, db *sql.DB) *ViewerList {
+func NewViewerList(channel string, db db.DB) *ViewerList {
 	viewers := &ViewerList{
-		channel:             channel,
-		db:                  db,
-		viewers:             map[string]*Viewer{},
-		staff:               map[string]int{},
-		mods:                map[string]int{},
-		lotteryContributers: map[string]int{},
+		channel: channel,
+		db:      db,
+		viewers: map[string]*Viewer{},
+		staff:   map[string]int{},
+		mods:    map[string]int{},
+		subs:    map[string]int{},
 	}
 
 	return viewers
@@ -84,9 +87,9 @@ func (V *ViewerList) RemoveMod(username string) {
 }
 
 func (V *ViewerList) SetSubscriber(username string) {
-	v, ok := V.viewers[username]
-	if ok {
-		v.subscriber = true
+	V.AddViewers([]string{username})
+	if _, ok := V.viewers[username]; ok {
+		V.subs[username] = 1
 	}
 }
 
@@ -97,8 +100,6 @@ func (V *ViewerList) InChannel(username string) (*Viewer, bool) {
 
 // FindViewer looks up a user in the database. If not found, nil is returned.
 func (V *ViewerList) FindViewer(username string) *Viewer {
-	row := V.db.QueryRow(`SELECT id FROM viewers WHERE channel=$1 AND username=$2`, V.channel, username)
-
 	viewer := &Viewer{
 		id:         -1,
 		updated:    false,
@@ -110,34 +111,11 @@ func (V *ViewerList) FindViewer(username string) *Viewer {
 		manager:    V,
 	}
 
-	var id int
-	err := row.Scan(&id)
-	if err == nil {
-		viewer.id = id
-	} else {
+	id, err := V.db.FindViewer(username, V.channel)
+	if err != nil {
 		return nil
 	}
-
-	var count int
-	var kind string
-	rows, err := V.db.Query(`SELECT count, type FROM counts WHERE viewer_id=$1 AND (type='money' OR type='time' OR type='lines_typed')`, viewer.id)
-	if err != nil {
-		return viewer
-	}
-	for rows.Next() {
-		err := rows.Scan(&count, &kind)
-		if err == nil {
-			switch {
-			case kind == "money":
-				viewer.money = count
-			case kind == "time":
-				viewer.timeSpent = count
-			case kind == "lines_typed":
-				viewer.linesTyped = count
-			}
-		}
-	}
-	rows.Close()
+	viewer.id = id
 
 	return viewer
 }
@@ -159,11 +137,8 @@ func (V *ViewerList) GetLevel(username string) Level {
 		return STAFF
 	} else if _, ok := V.mods[username]; ok {
 		return MOD
-	} else {
-		u, ok := V.InChannel(username)
-		if ok && u.subscriber {
-			return SUBSCRIBER
-		}
+	} else if _, ok := V.subs[username]; ok {
+		return SUBSCRIBER
 	}
 	return VIEWER
 }

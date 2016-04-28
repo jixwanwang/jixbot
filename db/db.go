@@ -8,8 +8,43 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// TODO: write stuff that resembles a database interface here.
-// For when you finally use a database instead of text files, you lazy poop.
+// TODO: write actual functions for the interface for database.
+
+type DB interface {
+	GetChannelProperties(channel string) (map[string]string, error)
+	SetChannelProperty(channel, k, v string) error
+
+	GetChannelEmotes(channel string) ([]string, error)
+	AddChannelEmote(channel, emote string) error
+	DeleteChannelEmote(channel, emote string) error
+
+	GetCommands(channel string) (map[string]bool, error)
+	AddCommand(channel, command string) error
+	DeleteCommand(channel, command string) error
+
+	GetTextCommands(channel string) ([]TextCommand, error)
+	AddTextCommand(channel string, comm TextCommand) error
+	UpdateTextCommand(channel string, comm TextCommand) error
+	DeleteTextCommand(channel, comm string) error
+
+	NewViewer(username, channel string) (id int, err error)
+	FindViewer(username, channel string) (id int, err error)
+
+	GetCount(viewerID int, kind string) (count int, err error)
+	SetCount(viewerID int, kind string, count int) error
+	HighestCount(channel, kind string) ([]Count, error)
+
+	GetBrawlWins(viewerID int) (map[int]int, error)
+	SetBrawlWins(viewerID int, channel string, wins map[int]int) error
+	GetBrawlSeason(channel string) (season int, err error)
+	BrawlStats(channel string, season int) ([]Count, error)
+}
+
+type dbImpl struct {
+	db *sql.DB
+}
+
+var _ DB = new(dbImpl)
 
 func New(host, port, name, user, password string) (*sql.DB, error) {
 	pgConnect := fmt.Sprintf("dbname=%s user=%s host=%s port=%s",
@@ -33,4 +68,8 @@ func New(host, port, name, user, password string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func NewDB(db *sql.DB) DB {
+	return &dbImpl{db: db}
 }

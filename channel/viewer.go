@@ -19,8 +19,6 @@ type Viewer struct {
 	updated bool
 	manager *ViewerList
 
-	subscriber bool
-
 	linesTyped int
 	timeSpent  int
 	money      int
@@ -52,23 +50,15 @@ func (V *Viewer) GetTotalBrawlsWon() int {
 }
 
 func (V *Viewer) lookupBrawlWins() map[int]int {
-	wins := map[int]int{}
 	if V.id < 0 {
-		return wins
+		return map[int]int{}
 	}
 
-	rows, err := V.manager.db.Query("SELECT season, wins FROM brawlwins WHERE viewer_id=$1", V.id)
+	wins, err := V.manager.db.GetBrawlWins(V.id)
 	if err != nil {
-		return wins
+		return map[int]int{}
 	}
-	for rows.Next() {
-		var season, numWins int
-		if err := rows.Scan(&season, &numWins); err != nil {
-			log.Printf("coudln't scan: %s", err.Error())
-		}
-		wins[season] = numWins
-	}
-	rows.Close()
+
 	return wins
 }
 
@@ -88,10 +78,9 @@ func (V *Viewer) WinBrawl(season int) {
 func (V *Viewer) GetLinesTyped() int {
 	if V.linesTyped < 0 {
 		if V.id > 0 {
-			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='lines_typed' AND viewer_id=$1", V.id)
-
-			if err := row.Scan(&V.linesTyped); err != nil {
-				V.linesTyped = 0
+			lines, err := V.manager.db.GetCount(V.id, "lines_typed")
+			if err == nil {
+				V.linesTyped = lines
 			}
 		} else {
 			V.linesTyped = 0
@@ -108,10 +97,9 @@ func (V *Viewer) AddLineTyped() {
 func (V *Viewer) GetTimeSpent() int {
 	if V.timeSpent < 0 {
 		if V.id > 0 {
-			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='time' AND viewer_id=$1", V.id)
-
-			if err := row.Scan(&V.timeSpent); err != nil {
-				V.timeSpent = 0
+			time, err := V.manager.db.GetCount(V.id, "time")
+			if err == nil {
+				V.timeSpent = time
 			}
 		} else {
 			V.timeSpent = 0
@@ -128,10 +116,9 @@ func (V *Viewer) AddTimeSpent(minutes int) {
 func (V *Viewer) GetMoney() int {
 	if V.money < 0 {
 		if V.id > 0 {
-			row := V.manager.db.QueryRow("SELECT count FROM counts WHERE type='money' AND viewer_id=$1", V.id)
-
-			if err := row.Scan(&V.money); err != nil {
-				V.money = 0
+			money, err := V.manager.db.GetCount(V.id, "money")
+			if err == nil {
+				V.money = money
 			}
 		} else {
 			V.money = 0
@@ -163,39 +150,24 @@ func (V *Viewer) save() {
 		V.Reset()
 	}
 	if V.updated {
+		log.Printf("%s is updated", V.Username)
 		if V.id == -1 {
-			// Write new user to db
-			V.manager.db.Exec("INSERT INTO viewers (username, channel) VALUES ($1, $2)", V.Username, V.manager.channel)
-			row := V.manager.db.QueryRow("SELECT id FROM viewers WHERE username=$1 AND channel=$2", V.Username, V.manager.channel)
-			var id int
-			if err := row.Scan(&id); err != nil {
-				log.Printf("failed to get id of new user: %s", err.Error())
+			id, err := V.manager.db.NewViewer(V.Username, V.manager.channel)
+			if err == nil {
+				V.id = id
 			}
-			V.id = id
 		}
 		if V.brawlsWon != nil {
-			for season, wins := range V.brawlsWon {
-				insert := "INSERT INTO brawlwins (season, viewer_id, wins, channel) SELECT $1, $2, $3, $4"
-				upsert := "UPDATE brawlwins SET wins=$3 WHERE season=$1 AND viewer_id=$2 AND channel=$4"
-				V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", season, V.id, wins, V.manager.channel)
-			}
+			V.manager.db.SetBrawlWins(V.id, V.manager.channel, V.brawlsWon)
 		}
 		if V.money > 0 {
-			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'money', $1, $2"
-			upsert := "UPDATE counts SET count=$2 WHERE type='money' AND viewer_id=$1"
-			V.manager.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", V.id, V.money)
+			V.manager.db.SetCount(V.id, "money", V.money)
 		}
 		if V.linesTyped > 0 {
-			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'lines_typed', $1, $2"
-			upsert := "UPDATE counts SET count=$2 WHERE type='lines_typed' AND viewer_id=$1"
-			query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
-			V.manager.db.Exec(query, V.id, V.linesTyped)
+			V.manager.db.SetCount(V.id, "lines_typed", V.linesTyped)
 		}
 		if V.timeSpent > 0 {
-			insert := "INSERT INTO counts (type, viewer_id, count) SELECT 'time', $1, $2"
-			upsert := "UPDATE counts SET count=$2 WHERE type='time' AND viewer_id=$1"
-			query := "WITH upsert AS (" + upsert + " RETURNING *) " + insert + " WHERE NOT EXISTS (SELECT * FROM upsert);"
-			V.manager.db.Exec(query, V.id, V.timeSpent)
+			V.manager.db.SetCount(V.id, "time", V.timeSpent)
 		}
 		V.updated = false
 	}
