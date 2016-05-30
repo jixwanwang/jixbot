@@ -86,7 +86,7 @@ type Stream struct {
 }
 
 func LiveStream(channel string) *KrakenStream {
-	resp, err := http.Get("https://api.twitch.tv/kraken/streams/" + B.username)
+	resp, err := http.Get("https://api.twitch.tv/kraken/streams/" + channel)
 	if err != nil {
 		return nil
 	}
