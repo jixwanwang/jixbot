@@ -3,12 +3,17 @@ package irc
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"time"
 )
 
 type Client struct {
+	channel  string
+	oauth    string
+	username string
+
 	socket       net.Conn
 	br           *bufio.Reader
 	sentMessages []message
@@ -31,8 +36,11 @@ type Event struct {
 	Err     error
 }
 
-func New(server string, messageRate int) (*Client, error) {
+func New(server, channel, oauth, username string, messageRate int) (*Client, error) {
 	client := &Client{
+		channel:     channel,
+		oauth:       oauth,
+		username:    username,
 		messageRate: messageRate,
 		server:      server,
 	}
@@ -48,6 +56,14 @@ func (C *Client) Reload() error {
 	C.br = br
 	C.socket = conn
 	C.closed = false
+
+	C.Send(fmt.Sprintf("PASS %s", C.oauth))
+	C.Send(fmt.Sprintf("NICK %s", C.username))
+	C.Send(fmt.Sprintf("JOIN #%s", C.channel))
+	C.Send("CAP REQ :twitch.tv/commands")
+	C.Send("CAP REQ :twitch.tv/membership")
+	C.Send("CAP REQ :twitch.tv/tags")
+	C.Send(fmt.Sprintf("JOIN #%s", C.username))
 
 	return err
 }
@@ -71,6 +87,7 @@ func (C *Client) Say(channel, msg string) {
 	}
 
 	if len(C.sentMessages) < C.messageRate {
+		log.Printf(">PRIVMSG %s :%s", channel, msg)
 		C.Send(fmt.Sprintf("PRIVMSG %s :%s", channel, msg))
 		C.sentMessages = append(C.sentMessages, message{
 			message: msg,
@@ -79,8 +96,8 @@ func (C *Client) Say(channel, msg string) {
 	}
 }
 
-func (C *Client) Whisper(channel, to, msg string) {
-	C.Say(channel, fmt.Sprintf("/w %s %s", to, msg))
+func (C *Client) Whisper(to, msg string) {
+	C.Say("#"+C.channel, fmt.Sprintf("/w %s %s", to, msg))
 }
 
 func (C *Client) ReadLoop() chan Event {
