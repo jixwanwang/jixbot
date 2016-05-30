@@ -2,11 +2,7 @@ package stream_bot
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"log"
-	"math/rand"
-	"net/http"
 	"strings"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -15,6 +11,7 @@ import (
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
+	"github.com/jixwanwang/jixbot/twitch_api"
 )
 
 const (
@@ -50,10 +47,10 @@ func New(channelName, username, oauth, groupchat string, texter messaging.Texter
 
 	log.Printf("starting up for %v", channelName)
 
-	chatServer := readIRCServer("http://tmi.twitch.tv/servers?channel="+channelName, "irc.chat.twitch.tv:80")
+	chatServer := twitch_api.GetIRCServer(channelName, "irc.chat.twitch.tv:80")
 	log.Printf("chat server for %s: %s", channelName, chatServer)
 
-	groupServer := readIRCServer("http://tmi.twitch.tv/servers?cluster=group", "irc.chat.twitch.tv:80")
+	groupServer := twitch_api.GetIRCCluster("irc.chat.twitch.tv:80")
 	log.Printf("group chat server for %s: %s", channelName, groupServer)
 
 	bot.client, _ = irc.New(chatServer, channelName, oauth, username, 10)
@@ -92,23 +89,6 @@ func (B *Bot) SetProperty(k, v string) {
 }
 func (B *Bot) GetProperties() map[string]interface{} {
 	return B.channel.GetProperties()
-}
-
-func readIRCServer(url, def string) string {
-	resp, err := http.Get(url)
-	if err == nil {
-		defer resp.Body.Close()
-		var m map[string]interface{}
-		dec := json.NewDecoder(resp.Body)
-		err := dec.Decode(&m)
-		if err == nil {
-			servers, ok := m["servers"].([]interface{})
-			if ok {
-				return fmt.Sprintf("%v", servers[rand.Intn(len(servers))])
-			}
-		}
-	}
-	return def
 }
 
 func (B *Bot) reloadClients() {

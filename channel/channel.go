@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jixwanwang/jixbot/db"
+	"github.com/jixwanwang/jixbot/twitch_api"
 )
 
 type Channel struct {
@@ -48,13 +49,8 @@ func New(channel string, db db.DB) *Channel {
 	}
 
 	log.Printf("getting emotes properties for %s", channel)
-	emotes, err := db.GetChannelEmotes(channel)
-	if err != nil {
-		emotes = []string{}
-	}
-
-	c.Emotes = emotes
-	log.Printf("Loaded emotes %s for %s", emotes, channel)
+	c.Emotes = twitch_api.GetEmotes(channel)
+	log.Printf("Loaded emotes %s for %s", c.Emotes, channel)
 
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
