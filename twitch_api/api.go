@@ -20,7 +20,7 @@ type Emote struct {
 }
 
 func GetEmotes(channel string) []string {
-	resp, err := http.Get("http://api.twitch.tv/kraken/chat/hotform/emoticons?on_site=1")
+	resp, err := http.Get("http://api.twitch.tv/kraken/chat/" + channel + "/emoticons?on_site=1")
 	if err != nil {
 		log.Printf("failed to do GET %v", err)
 		return []string{}
