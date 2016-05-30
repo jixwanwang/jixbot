@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type emoticonsAPIResponse struct {
@@ -74,4 +75,26 @@ func GetIRCCluster(def string) string {
 		}
 	}
 	return def
+}
+
+type KrakenStream struct {
+	Stream *Stream `json:"stream"`
+}
+
+type Stream struct {
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func LiveStream(channel string) *KrakenStream {
+	resp, err := http.Get("https://api.twitch.tv/kraken/streams/" + B.username)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var s KrakenStream
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&s)
+
+	return &s
 }
