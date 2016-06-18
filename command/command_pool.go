@@ -141,6 +141,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&commandList{
 			cp: C,
 		},
+		&questions{
+			cp: C,
+		},
 	}
 }
 

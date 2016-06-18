@@ -29,13 +29,6 @@ func (B *dbImpl) DeleteCommand(channel, command string) error {
 	return err
 }
 
-type TextCommand struct {
-	Clearance int
-	Command   string
-	Response  string
-	Cooldown  time.Duration
-}
-
 func (B *dbImpl) GetTextCommands(channel string) ([]TextCommand, error) {
 	rows, err := B.db.Query("SELECT command, message, clearance, cooldown FROM textcommands WHERE channel=$1", channel)
 	if err != nil {

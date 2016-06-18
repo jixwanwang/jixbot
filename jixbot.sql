@@ -22,6 +22,9 @@ create table commands (id serial primary key, channel text, command text);
 drop table if exists channel_properties;
 create table channel_properties (id serial primary key, channel text, k text, v text);
 
+drop table if exists questions;
+create table questions (id serial primary key, channel text, question text, answer text);
+
 insert into channels (username) values ('jixwanwang');
 
 insert into viewers (username, channel) values ('jixwanwang', 'jixwanwang');

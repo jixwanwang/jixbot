@@ -2,11 +2,6 @@ package db
 
 import "database/sql"
 
-type Count struct {
-	Username string
-	Count    int
-}
-
 func (B *dbImpl) BrawlStats(channel string, season int) ([]Count, error) {
 	var rows *sql.Rows
 	var err error

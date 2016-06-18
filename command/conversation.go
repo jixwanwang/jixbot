@@ -41,7 +41,7 @@ func (T *conversation) Response(username, message string, whisper bool) {
 		return
 	}
 
-	if time.Since(T.lastResponse).Seconds() < 5 {
+	if time.Since(T.lastResponse).Seconds() < 10 || rand.Intn(2) == 0 {
 		return
 	}
 

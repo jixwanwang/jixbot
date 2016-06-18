@@ -35,7 +35,6 @@ func New(channel string, db db.DB) *Channel {
 		db:          db,
 	}
 
-	log.Printf("getting channel properties for %s", channel)
 	properties, err := db.GetChannelProperties(channel)
 	c.Currency = "Coin"
 	c.SubName = "subscribers"
@@ -46,11 +45,11 @@ func New(channel string, db db.DB) *Channel {
 			log.Printf("property: %s, %s,", k, v)
 			c.SetProperty(k, v)
 		}
+	} else {
+		log.Printf("Failed to get channel properties for hotform!")
 	}
 
-	log.Printf("getting emotes properties for %s", channel)
 	c.Emotes = twitch_api.GetEmotes(channel)
-	log.Printf("Loaded emotes %s for %s", c.Emotes, channel)
 
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)

@@ -38,6 +38,10 @@ type DB interface {
 	SetBrawlWins(viewerID int, channel string, wins map[int]int) error
 	GetBrawlSeason(channel string) (season int, err error)
 	BrawlStats(channel string, season int) ([]Count, error)
+
+	RetrieveQuestionAnswers(channel string) ([]QuestionAnswer, error)
+	AddQuestionAnswer(channel, question, answer string) (QuestionAnswer, error)
+	UpdateQuestionAnswer(qa QuestionAnswer) error
 }
 
 type dbImpl struct {
