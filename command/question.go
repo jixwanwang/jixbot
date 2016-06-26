@@ -21,6 +21,7 @@ type newQuestion struct {
 type questions struct {
 	cp *CommandPool
 
+	questionRgx   *regexp.Regexp
 	qas           []db.QuestionAnswer
 	newQuestions  map[string]newQuestion
 	storeQuestion *subCommand
@@ -33,6 +34,7 @@ func (T *questions) Init() {
 		log.Printf("Failed to lookup question answers!")
 	}
 
+	T.questionRgx, _ = regexp.Compile(`[^A-Za-z0-9\?\ ]+`)
 	T.qas = qas
 	T.newQuestions = map[string]newQuestion{}
 
@@ -57,6 +59,13 @@ func (T *questions) Response(username, message string, whisper bool) {
 
 	clearance := T.cp.channel.GetLevel(username)
 
+	// clean up old stuff in questions list
+	for k, v := range T.newQuestions {
+		if time.Since(v.timestamp) > 3*time.Minute {
+			delete(T.newQuestions, k)
+		}
+	}
+
 	args, err := T.storeAnswer.parse(message, clearance)
 	if err == nil {
 		user := strings.TrimPrefix(args[0], "@")
@@ -72,12 +81,12 @@ func (T *questions) Response(username, message string, whisper bool) {
 	}
 
 	// Short circuit with a less strict test to prevent doing all this string manipulation
-	if !(strings.Index(message, "who") >= 0 ||
-		strings.Index(message, "what") >= 0 ||
-		strings.Index(message, "when") >= 0 ||
-		strings.Index(message, "where") >= 0 ||
-		strings.Index(message, "how") >= 0 ||
-		strings.HasSuffix(message, "?")) {
+	if strings.Index(message, "who") < 0 &&
+		strings.Index(message, "what") < 0 &&
+		strings.Index(message, "when") < 0 &&
+		strings.Index(message, "where") < 0 &&
+		strings.Index(message, "how") < 0 &&
+		!strings.HasSuffix(message, "?") {
 		return
 	}
 
@@ -89,10 +98,6 @@ func (T *questions) Response(username, message string, whisper bool) {
 			message = message[:i] + part[space+1:]
 		}
 	}
-
-	// Remove all punctuation
-	reg, err := regexp.Compile(`[^A-Za-z0-9\?\ ]+`)
-	message = reg.ReplaceAllString(message, "")
 
 	// remove commonly used fillers for questions
 	message = strings.Replace(message, "hi ", "", -1)
@@ -115,12 +120,13 @@ func (T *questions) Response(username, message string, whisper bool) {
 		return
 	}
 
-	// clean up old stuff in questions list
-	for k, v := range T.newQuestions {
-		if time.Since(v.timestamp) > 5*time.Minute {
-			delete(T.newQuestions, k)
-		}
-	}
+	// // Only attempt to answer questions 50% of the time
+	// if rand.Intn(2) == 0 {
+	// 	return
+	// }
+
+	// Remove all punctuation
+	message = T.questionRgx.ReplaceAllString(message, "")
 
 	if strings.HasSuffix(message, "?") {
 		message = strings.TrimSuffix(message, "?")
