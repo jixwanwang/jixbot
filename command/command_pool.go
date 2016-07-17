@@ -180,7 +180,7 @@ func (C *CommandPool) DeleteCommand(command string) {
 	for _, c := range C.specials {
 		if c.ID() == command {
 			exists = true
-			C.enabled[command] = false
+			delete(C.enabled, c.ID())
 			break
 		}
 	}
