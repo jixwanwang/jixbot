@@ -150,6 +150,9 @@ func (V *Viewer) save() {
 			V.manager.db.SetBrawlWins(V.id, V.manager.channel, V.brawlsWon)
 		}
 
+		if V.counts == nil {
+			V.counts = &db.Counts{}
+		}
 		V.counts.ViewerID = V.id
 		err := V.manager.db.SetCounts(V.counts)
 		if err != nil {
