@@ -1,6 +1,10 @@
 package channel
 
-import "log"
+import (
+	"log"
+
+	"github.com/jixwanwang/jixbot/db"
+)
 
 var blacklistedUsers = map[string]int{
 	"nightbot":     0,
@@ -19,16 +23,12 @@ type Viewer struct {
 	updated bool
 	manager *ViewerList
 
-	linesTyped int
-	timeSpent  int
-	money      int
-	brawlsWon  map[int]int
+	counts    *db.Counts
+	brawlsWon map[int]int
 }
 
 func (V *Viewer) Reset() {
-	V.money = 0
-	V.linesTyped = 0
-	V.timeSpent = 0
+	V.counts = &db.Counts{}
 	V.brawlsWon = map[int]int{}
 	V.updated = true
 }
@@ -75,62 +75,52 @@ func (V *Viewer) WinBrawl(season int) {
 	V.updated = true
 }
 
-func (V *Viewer) GetLinesTyped() int {
-	if V.linesTyped < 0 {
-		if V.id > 0 {
-			lines, err := V.manager.db.GetCount(V.id, "lines_typed")
-			if err == nil {
-				V.linesTyped = lines
-			}
-		} else {
-			V.linesTyped = 0
+func (V *Viewer) getCounts() {
+	V.counts = &db.Counts{}
+
+	if V.id > 0 {
+		counts, err := V.manager.db.GetCounts(V.id)
+		if err == nil {
+			V.counts = counts
 		}
 	}
-	return V.linesTyped
+}
+
+func (V *Viewer) GetLinesTyped() int {
+	if V.counts == nil {
+		V.getCounts()
+	}
+	return V.counts.LinesTyped
 }
 
 func (V *Viewer) AddLineTyped() {
-	V.linesTyped = V.GetLinesTyped() + 1
+	V.counts.LinesTyped = V.GetLinesTyped() + 1
 	V.updated = true
 }
 
 func (V *Viewer) GetTimeSpent() int {
-	if V.timeSpent < 0 {
-		if V.id > 0 {
-			time, err := V.manager.db.GetCount(V.id, "time")
-			if err == nil {
-				V.timeSpent = time
-			}
-		} else {
-			V.timeSpent = 0
-		}
+	if V.counts == nil {
+		V.getCounts()
 	}
-	return V.timeSpent
+	return V.counts.TimeSpent
 }
 
 func (V *Viewer) AddTimeSpent(minutes int) {
-	V.timeSpent = V.GetTimeSpent() + minutes
+	V.counts.TimeSpent = V.GetTimeSpent() + minutes
 	V.updated = true
 }
 
 func (V *Viewer) GetMoney() int {
-	if V.money < 0 {
-		if V.id > 0 {
-			money, err := V.manager.db.GetCount(V.id, "money")
-			if err == nil {
-				V.money = money
-			}
-		} else {
-			V.money = 0
-		}
+	if V.counts == nil {
+		V.getCounts()
 	}
-	return V.money
+	return V.counts.Money
 }
 
 func (V *Viewer) AddMoney(amount int) {
-	V.money = V.GetMoney() + amount
-	if V.money < 0 {
-		V.money = 0
+	V.counts.Money = V.GetMoney() + amount
+	if V.counts.Money < 0 {
+		V.counts.Money = 0
 	}
 	V.updated = true
 }
@@ -160,15 +150,13 @@ func (V *Viewer) save() {
 		if V.brawlsWon != nil {
 			V.manager.db.SetBrawlWins(V.id, V.manager.channel, V.brawlsWon)
 		}
-		if V.money > 0 {
-			V.manager.db.SetCount(V.id, "money", V.money)
+
+		V.counts.ViewerID = V.id
+		err := V.manager.db.SetCounts(V.counts)
+		if err != nil {
+			log.Printf("%v", err)
 		}
-		if V.linesTyped > 0 {
-			V.manager.db.SetCount(V.id, "lines_typed", V.linesTyped)
-		}
-		if V.timeSpent > 0 {
-			V.manager.db.SetCount(V.id, "time", V.timeSpent)
-		}
+
 		V.updated = false
 	}
 }

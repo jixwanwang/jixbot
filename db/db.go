@@ -30,6 +30,9 @@ type DB interface {
 	NewViewer(username, channel string) (id int, err error)
 	FindViewer(username, channel string) (id int, err error)
 
+	GetCounts(viewerID int) (*Counts, error)
+	SetCounts(counts *Counts) error
+
 	GetCount(viewerID int, kind string) (count int, err error)
 	SetCount(viewerID int, kind string, count int) error
 	HighestCount(channel, kind string) ([]Count, error)

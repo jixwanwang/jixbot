@@ -26,3 +26,19 @@ func (B *dbImpl) SetCount(viewerID int, kind string, count int) error {
 	_, err := B.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", viewerID, kind, count)
 	return err
 }
+
+func (B *dbImpl) GetCounts(viewerID int) (*Counts, error) {
+	row := B.db.QueryRow("SELECT money, lines_typed, time_spent FROM better_counts WHERE viewer_id=$1", viewerID)
+	counts := &Counts{
+		ViewerID: viewerID,
+	}
+	err := row.Scan(&counts.Money, &counts.LinesTyped, &counts.TimeSpent)
+	return counts, err
+}
+
+func (B *dbImpl) SetCounts(counts *Counts) error {
+	insert := "INSERT INTO better_counts (viewer_id, money, lines_typed, time_spent) SELECT $1, $2, $3, $4"
+	upsert := "UPDATE better_counts SET money=$2, lines_typed=$3, time_spent=$4 WHERE viewer_id=$1"
+	_, err := B.db.Exec("WITH upsert AS ("+upsert+" RETURNING *) "+insert+" WHERE NOT EXISTS (SELECT * FROM upsert);", counts.ViewerID, counts.Money, counts.LinesTyped, counts.TimeSpent)
+	return err
+}
