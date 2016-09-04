@@ -1,7 +1,5 @@
 package nlp
 
-import "log"
-
 type qa struct {
 	question map[string]int
 	answer   string
@@ -19,7 +17,7 @@ func NewQuestionAnswerer() *QuestionAnswerer {
 
 func (Q *QuestionAnswerer) AddQuestionAndAnswer(q, a string) {
 	words := cleanWords(q)
-	log.Printf("Cleaned up words for question: %v", words)
+
 	m := countWords(words)
 	Q.qas = append(Q.qas, &qa{
 		question: m,
@@ -29,7 +27,6 @@ func (Q *QuestionAnswerer) AddQuestionAndAnswer(q, a string) {
 
 func (Q *QuestionAnswerer) AnswerQuestion(question string) (string, float64) {
 	words := cleanWords(question)
-	log.Printf("Cleaned up words for test question: %v", words)
 	input := countWords(words)
 
 	score := 0.0

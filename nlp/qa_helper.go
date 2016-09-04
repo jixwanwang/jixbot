@@ -10,7 +10,6 @@ import (
 func cleanWords(s string) []string {
 	words := []string{}
 	parts := strings.Split(s, " ")
-	// return parts
 	for _, word := range parts {
 		if len(word) == 0 {
 			continue
@@ -19,7 +18,6 @@ func cleanWords(s string) []string {
 			continue
 		}
 
-		// Turn this off for now
 		word = string(stemmer.Stem([]byte(word)))
 		words = append(words, word)
 	}

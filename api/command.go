@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -35,7 +34,6 @@ func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	commands := strings.Split(r.FormValue("commands"), ",")
-	log.Printf("adding %s to commands for %s", commands, channel)
 	for _, c := range commands {
 		bot.AddActiveCommand(c)
 	}
@@ -56,7 +54,6 @@ func (T *API) deleteCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	commands := strings.Split(r.FormValue("commands"), ",")
-	log.Printf("adding %s to commands for %s", commands, channel)
 	for _, c := range commands {
 		bot.DeleteCommand(c)
 	}

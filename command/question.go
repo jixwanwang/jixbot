@@ -95,32 +95,18 @@ func (T *questions) Response(username, message string, whisper bool) {
 		}
 	}
 
-	// Remove all mentions
+	// Remove all mentions and punctuation
 	message = T.mentionRgx.ReplaceAllString(message, "")
-
-	// TODO: make this a regex
-	for i := strings.Index(message, "@"); i >= 0; i = strings.Index(message, "@") {
-		part := message[i:]
-		space := strings.Index(part, " ")
-		if space >= 0 {
-			message = message[:i] + part[space+1:]
-		}
-	}
-
-	// Remove all punctuation
 	message = T.cleanRgx.ReplaceAllString(message, "")
 
-	if strings.HasSuffix(message, "?") {
-		message = strings.TrimSuffix(message, "?")
-	}
+	// Trim ?, don't want that in the question body
+	message = strings.TrimSuffix(message, "?")
 
 	T.newQuestions[username] = newQuestion{
 		timestamp: time.Now(),
 		username:  username,
 		question:  message,
 	}
-
-	log.Printf("question: %s", message)
 
 	if time.Since(T.lastQuestionAnswered) > 15*time.Second {
 		// Check if the question has an answer
