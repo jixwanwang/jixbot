@@ -8,6 +8,7 @@ import (
 )
 
 var stopwordRegex *regexp.Regexp
+var stopwordMap map[string]bool
 
 func init() {
 	stopwords := []string{"the", "is", "at",
@@ -25,6 +26,11 @@ func init() {
 		stopwords = strings.Split(string(b), ",")
 	}
 
+	stopwordMap = map[string]bool{}
+	for _, w := range stopwords {
+		stopwordMap[w] = true
+	}
+
 	reStr := ""
 
 	for i, word := range stopwords {
@@ -34,6 +40,11 @@ func init() {
 		reStr += `\A` + word + `\z`
 	}
 	stopwordRegex = regexp.MustCompile(reStr)
+}
+
+func IsStopword(word string) bool {
+	_, ok := stopwordMap[word]
+	return ok
 }
 
 func FilterStopwords(message string) string {

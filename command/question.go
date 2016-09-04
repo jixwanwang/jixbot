@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -22,10 +21,13 @@ type questions struct {
 	cp *CommandPool
 
 	questionRgx *regexp.Regexp
+	cleanRgx    *regexp.Regexp
+	mentionRgx  *regexp.Regexp
 	qa          *nlp.QuestionAnswerer
 
-	newQuestions map[string]newQuestion
-	storeAnswer  *subCommand
+	newQuestions         map[string]newQuestion
+	storeAnswer          *subCommand
+	lastQuestionAnswered time.Time
 }
 
 func (T *questions) Init() {
@@ -34,12 +36,16 @@ func (T *questions) Init() {
 		log.Printf("Failed to lookup question answers!")
 	}
 
-	T.questionRgx, _ = regexp.Compile(`[^A-Za-z0-9\?\ ]+`)
+	T.questionRgx, _ = regexp.Compile(`^(who|what|when|where|why)`)
+	T.cleanRgx, _ = regexp.Compile(`[^A-Za-z0-9\?\ ]+`)
+	T.mentionRgx, _ = regexp.Compile(`@[a-zA-Z0-9_]+`)
+
 	T.qa = nlp.NewQuestionAnswerer()
 	for _, qa := range qas {
 		T.qa.AddQuestionAndAnswer(qa.Q, qa.A)
 	}
 
+	T.lastQuestionAnswered = time.Now()
 	T.newQuestions = map[string]newQuestion{}
 
 	T.storeAnswer = &subCommand{
@@ -63,13 +69,6 @@ func (T *questions) Response(username, message string, whisper bool) {
 
 	clearance := T.cp.channel.GetLevel(username)
 
-	// clean up old stuff in questions list
-	for k, v := range T.newQuestions {
-		if time.Since(v.timestamp) > 3*time.Minute {
-			delete(T.newQuestions, k)
-		}
-	}
-
 	args, err := T.storeAnswer.parse(message, clearance)
 	if err == nil {
 		user := strings.TrimPrefix(args[0], "@")
@@ -84,17 +83,21 @@ func (T *questions) Response(username, message string, whisper bool) {
 		}
 	}
 
-	// Short circuit with a less strict test to prevent doing all this string manipulation
-	if strings.Index(message, "who") < 0 &&
-		strings.Index(message, "what") < 0 &&
-		strings.Index(message, "when") < 0 &&
-		strings.Index(message, "where") < 0 &&
-		strings.Index(message, "how") < 0 &&
-		!strings.HasSuffix(message, "?") {
+	// Check for questionness
+	if !(T.questionRgx.MatchString(message) || message[len(message)-1:] == "?") {
 		return
 	}
 
+	// clean up old stuff in questions list
+	for k, v := range T.newQuestions {
+		if time.Since(v.timestamp) > 1*time.Minute {
+			delete(T.newQuestions, k)
+		}
+	}
+
 	// Remove all mentions
+	message = T.mentionRgx.ReplaceAllString(message, "")
+
 	// TODO: make this a regex
 	for i := strings.Index(message, "@"); i >= 0; i = strings.Index(message, "@") {
 		part := message[i:]
@@ -104,29 +107,8 @@ func (T *questions) Response(username, message string, whisper bool) {
 		}
 	}
 
-	// // remove commonly used fillers for questions
-	// message = strings.Replace(message, "hi ", "", -1)
-	// message = strings.Replace(message, "hello ", "", -1)
-	// message = strings.Replace(message, "hey ", "", -1)
-
-	// message = strings.Replace(message, " hi", "", -1)
-	// message = strings.Replace(message, " hello", "", -1)
-	// message = strings.Replace(message, " hey", "", -1)
-
-	// message = strings.TrimSpace(message)
-
-	// Check for questionness
-	if !(strings.HasPrefix(message, "who") ||
-		strings.HasPrefix(message, "what") ||
-		strings.HasPrefix(message, "when") ||
-		strings.HasPrefix(message, "where") ||
-		strings.HasPrefix(message, "how") ||
-		strings.HasSuffix(message, "?")) {
-		return
-	}
-
 	// Remove all punctuation
-	message = T.questionRgx.ReplaceAllString(message, "")
+	message = T.cleanRgx.ReplaceAllString(message, "")
 
 	if strings.HasSuffix(message, "?") {
 		message = strings.TrimSuffix(message, "?")
@@ -140,16 +122,14 @@ func (T *questions) Response(username, message string, whisper bool) {
 
 	log.Printf("question: %s", message)
 
-	// Only attempt to answer questions 50% of the time
-	if rand.Intn(2) == 0 {
-		return
-	}
+	if time.Since(T.lastQuestionAnswered) > 15*time.Second {
+		// Check if the question has an answer
+		answer, score := T.qa.AnswerQuestion(message)
 
-	// Check if the question has an answer
-	answer, score := T.qa.AnswerQuestion(message)
-
-	if len(answer) > 0 && score > 0.8 {
-		T.cp.Say(fmt.Sprintf("@%s %s", username, answer))
-		return
+		if len(answer) > 0 && score > 0.8 {
+			T.lastQuestionAnswered = time.Now()
+			T.cp.Say(fmt.Sprintf("@%s %s", username, answer))
+			return
+		}
 	}
 }

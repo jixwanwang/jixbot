@@ -9,16 +9,19 @@ import (
 
 func cleanWords(s string) []string {
 	words := []string{}
-	for _, w := range strings.Split(s, " ") {
-		if len(w) == 0 {
-			continue
-		}
-		word := stopwordRegex.ReplaceAll([]byte(w), []byte(""))
+	parts := strings.Split(s, " ")
+	// return parts
+	for _, word := range parts {
 		if len(word) == 0 {
 			continue
 		}
-		a := stemmer.Stem(word)
-		words = append(words, string(a))
+		if IsStopword(word) {
+			continue
+		}
+
+		// Turn this off for now
+		word = string(stemmer.Stem([]byte(word)))
+		words = append(words, word)
 	}
 	return words
 }
