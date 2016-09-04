@@ -10,6 +10,12 @@ create table brawlwins (id serial primary key, season int, viewer_id int, wins i
 drop table if exists counts;
 create table counts (id serial primary key, type text, viewer_id int, count int);
 
+drop table if exists better_counts;
+create table better_counts (viewer_id int primary key, money int default 0, lines_typed int default 0, time_spent int default 0);
+create index better_counts_money_idx on better_counts (money);
+create index better_counts_lines_typed_idx on better_counts (lines_typed);
+create index better_counts_time_spent_idx on better_counts (time_spent);
+
 drop table if exists emotes;
 create table emotes (id serial primary key, channel text, emote text);
 

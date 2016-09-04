@@ -14,6 +14,13 @@ type Count struct {
 	Count    int
 }
 
+type Counts struct {
+	ViewerID   int
+	LinesTyped int
+	TimeSpent  int
+	Money      int
+}
+
 type QuestionAnswer struct {
 	ID      int
 	Channel string

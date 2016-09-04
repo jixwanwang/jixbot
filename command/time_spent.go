@@ -82,7 +82,7 @@ func timeSpentString(minutes int) string {
 }
 
 func (T *timeSpent) calculateLongest() string {
-	counts, err := T.cp.db.HighestCount(T.cp.channel.GetChannelName(), "time")
+	counts, err := T.cp.db.HighestCount(T.cp.channel.GetChannelName(), "time_spent")
 	if err != nil {
 		return ""
 	}

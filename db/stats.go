@@ -1,6 +1,9 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 func (B *dbImpl) BrawlStats(channel string, season int) ([]Count, error) {
 	var rows *sql.Rows
@@ -40,10 +43,12 @@ func (B *dbImpl) BrawlStats(channel string, season int) ([]Count, error) {
 }
 
 func (B *dbImpl) HighestCount(channel, kind string) ([]Count, error) {
-	rows, err := B.db.Query(`SELECT sum(c.count) as lines, v.username FROM counts AS c `+
+	query := fmt.Sprintf(`SELECT sum(c.%s) as count, v.username FROM better_counts AS c `+
 		`JOIN viewers AS v ON v.id = c.viewer_id `+
-		`WHERE c.type=$2 AND v.channel=$1 `+
-		`GROUP BY v.username ORDER BY lines DESC LIMIT 10`, channel, kind)
+		`WHERE v.channel=$1 `+
+		`GROUP BY v.username ORDER BY count DESC LIMIT 10`, kind)
+
+	rows, err := B.db.Query(query, channel)
 	if err != nil {
 		return nil, err
 	}

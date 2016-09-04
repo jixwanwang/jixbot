@@ -11,6 +11,8 @@ import (
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
 	"github.com/zenazn/goji/graceful"
+
+	_ "net/http/pprof"
 )
 
 const ()

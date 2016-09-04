@@ -50,13 +50,11 @@ func (V *ViewerList) AddViewer(username string) *Viewer {
 		if v == nil {
 			// Create user if they don't exist
 			v = &Viewer{
-				id:         -1,
-				Username:   username,
-				updated:    true,
-				linesTyped: -1,
-				money:      -1,
-				brawlsWon:  nil,
-				manager:    V,
+				id:        -1,
+				Username:  username,
+				updated:   true,
+				brawlsWon: nil,
+				manager:   V,
 			}
 		}
 		V.viewers[username] = v
@@ -101,14 +99,11 @@ func (V *ViewerList) InChannel(username string) (*Viewer, bool) {
 // FindViewer looks up a user in the database. If not found, nil is returned.
 func (V *ViewerList) FindViewer(username string) *Viewer {
 	viewer := &Viewer{
-		id:         -1,
-		updated:    false,
-		Username:   username,
-		linesTyped: -1,
-		timeSpent:  -1,
-		money:      -1,
-		brawlsWon:  nil,
-		manager:    V,
+		id:        -1,
+		updated:   false,
+		Username:  username,
+		brawlsWon: nil,
+		manager:   V,
 	}
 
 	id, err := V.db.FindViewer(username, V.channel)
