@@ -36,6 +36,7 @@ type DB interface {
 	GetCount(viewerID int, kind string) (count int, err error)
 	SetCount(viewerID int, kind string, count int) error
 	HighestCount(channel, kind string) ([]Count, error)
+	HighestRatio(channel, numerator, denominator string) ([]Ratio, error)
 
 	GetBrawlWins(viewerID int) (map[int]int, error)
 	SetBrawlWins(viewerID int, channel string, wins map[int]int) error

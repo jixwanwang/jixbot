@@ -67,3 +67,29 @@ func (B *dbImpl) HighestCount(channel, kind string) ([]Count, error) {
 	}
 	return counts, nil
 }
+
+func (B *dbImpl) HighestRatio(channel, numerator, denominator string) ([]Ratio, error) {
+	query := fmt.Sprintf(`SELECT cast(c.%s AS FLOAT)/c.%s AS ratio, v.username FROM better_counts AS c `+
+		`JOIN viewers AS v ON v.id = c.viewer_id `+
+		`WHERE v.channel=$1 AND c.%s > 0`+
+		`ORDER BY ratio DESC LIMIT 10`, numerator, denominator, denominator)
+
+	rows, err := B.db.Query(query, channel)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var viewer string
+	var ratio float64
+	ratios := []Ratio{}
+	for rows.Next() {
+		rows.Scan(&ratio, &viewer)
+
+		ratios = append(ratios, Ratio{
+			Username: viewer,
+			Ratio:    ratio,
+		})
+	}
+	return ratios, nil
+}

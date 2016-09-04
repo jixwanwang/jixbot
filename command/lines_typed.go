@@ -10,8 +10,9 @@ import (
 type linesTyped struct {
 	cp *CommandPool
 
-	time  *subCommand
-	stats *subCommand
+	time    *subCommand
+	stats   *subCommand
+	actives *subCommand
 }
 
 func (T *linesTyped) Init() {
@@ -24,6 +25,13 @@ func (T *linesTyped) Init() {
 
 	T.stats = &subCommand{
 		command:   "!chattiest",
+		numArgs:   0,
+		cooldown:  1 * time.Minute,
+		clearance: channel.MOD,
+	}
+
+	T.actives = &subCommand{
+		command:   "!mostactive",
 		numArgs:   0,
 		cooldown:  1 * time.Minute,
 		clearance: channel.MOD,
@@ -55,6 +63,11 @@ func (T *linesTyped) Response(username, message string, whisper bool) {
 	if err == nil {
 		T.cp.Say(T.calculateChattiest())
 	}
+
+	_, err = T.actives.parse(message, clearance)
+	if err == nil {
+		T.cp.Say(T.calculateMostActive())
+	}
 }
 
 func (T *linesTyped) calculateChattiest() string {
@@ -66,6 +79,19 @@ func (T *linesTyped) calculateChattiest() string {
 	output := "Chattiest users: "
 	for _, c := range counts {
 		output = fmt.Sprintf("%s%s - %d lines, ", output, c.Username, c.Count)
+	}
+	return output[:len(output)-2]
+}
+
+func (T *linesTyped) calculateMostActive() string {
+	ratios, err := T.cp.db.HighestRatio(T.cp.channel.GetChannelName(), "lines_typed", "time_spent")
+	if err != nil {
+		return ""
+	}
+
+	output := "Most active users: "
+	for _, c := range ratios {
+		output = fmt.Sprintf("%s%s - %.1f lines/s, ", output, c.Username, c.Ratio)
 	}
 	return output[:len(output)-2]
 }

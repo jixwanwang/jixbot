@@ -14,6 +14,11 @@ type Count struct {
 	Count    int
 }
 
+type Ratio struct {
+	Username string
+	Ratio    float64
+}
+
 type Counts struct {
 	ViewerID   int
 	LinesTyped int
