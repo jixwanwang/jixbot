@@ -88,7 +88,6 @@ func (T *brawl) ID() string {
 
 func (T *brawl) endBrawl() {
 	T.active = false
-	log.Printf("Brawl ended")
 
 	users := []string{}
 

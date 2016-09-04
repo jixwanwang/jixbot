@@ -140,7 +140,6 @@ func (V *Viewer) save() {
 		V.Reset()
 	}
 	if V.updated {
-		log.Printf("%s is updated", V.Username)
 		if V.id == -1 {
 			id, err := V.manager.db.NewViewer(V.Username, V.manager.channel)
 			if err == nil {
@@ -151,6 +150,9 @@ func (V *Viewer) save() {
 			V.manager.db.SetBrawlWins(V.id, V.manager.channel, V.brawlsWon)
 		}
 
+		if V.counts == nil {
+			V.counts = &db.Counts{}
+		}
 		V.counts.ViewerID = V.id
 		err := V.manager.db.SetCounts(V.counts)
 		if err != nil {

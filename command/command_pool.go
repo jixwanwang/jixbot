@@ -197,7 +197,6 @@ func (C *CommandPool) Say(message string) {
 }
 
 func (C *CommandPool) Whisper(username, message string) {
-	log.Printf("Attempting to whisper %s to %s", message, username)
 	C.ircW.Whisper(username, message)
 }
 

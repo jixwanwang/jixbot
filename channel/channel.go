@@ -42,7 +42,6 @@ func New(channel string, db db.DB) *Channel {
 	c.ComboTriggers = []string{"PogChamp"}
 	if err == nil {
 		for k, v := range properties {
-			log.Printf("property: %s, %s,", k, v)
 			c.SetProperty(k, v)
 		}
 	} else {
@@ -157,6 +156,5 @@ func (V *Channel) AddTime(minutes int) {
 }
 
 func (V *Channel) Flush() {
-	log.Printf("Flushing viewerlist")
 	V.ViewerList.Flush()
 }
