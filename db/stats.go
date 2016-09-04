@@ -43,10 +43,10 @@ func (B *dbImpl) BrawlStats(channel string, season int) ([]Count, error) {
 }
 
 func (B *dbImpl) HighestCount(channel, kind string) ([]Count, error) {
-	query := fmt.Sprintf(`SELECT sum(c.%s) as count, v.username FROM better_counts AS c `+
+	query := fmt.Sprintf(`SELECT c.%s as count, v.username FROM better_counts AS c `+
 		`JOIN viewers AS v ON v.id = c.viewer_id `+
 		`WHERE v.channel=$1 `+
-		`GROUP BY v.username ORDER BY count DESC LIMIT 10`, kind)
+		`ORDER BY count DESC LIMIT 10`, kind)
 
 	rows, err := B.db.Query(query, channel)
 	if err != nil {
