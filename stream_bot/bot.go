@@ -166,10 +166,6 @@ func (B *Bot) Start() {
 						// parts := strings.Split(special, " ")
 						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
 					}
-				} else if username == "tmi.twitch.tv" {
-					if e.Kind == "USERNOTICE" {
-						B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
-					}
 				} else if username == "twitchnotify" {
 					B.processMessage(username, msg)
 				} else if msg == e.Message {
@@ -177,6 +173,12 @@ func (B *Bot) Start() {
 					msg = strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
 				} else {
 					B.processMessage(username, msg)
+				}
+			// Sub notification
+			case "USERNOTICE":
+				username := fromToUsername(e.From)
+				if username == "tmi.twitch.tv" {
+					B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
 				}
 			default: //ignore
 			}
