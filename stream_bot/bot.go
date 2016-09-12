@@ -168,7 +168,7 @@ func (B *Bot) Start() {
 					}
 				} else if username == "tmi.twitch.tv" {
 					if e.Kind == "USERNOTICE" {
-						B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " "))
+						B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
 					}
 				} else if username == "twitchnotify" {
 					B.processMessage(username, msg)
