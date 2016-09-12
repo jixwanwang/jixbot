@@ -25,7 +25,7 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		return
 	}
 
-	if username != "twitchnotify" {
+	if username != "tmi.twitch.tv" {
 		return
 	}
 
@@ -34,14 +34,7 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 	if strings.Index(msg, "just subscribed!") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
-		T.cp.Say(fmt.Sprintf("Thank you for subscribing %s, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
-
-		// viewer := T.cp.channel.ViewerList.FindViewer(username)
-		// if !ok {
-		// 	return
-		// }
-
-		// T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
+		T.cp.Say(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
 	} else if strings.Index(msg, "subscribed for ") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		msg = msg[strings.Index(msg, " ")+1:]
@@ -49,14 +42,14 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
 		monthIndex := strings.Index(msg, " months in a row!")
 		if monthIndex == -1 {
-			T.cp.Say(fmt.Sprintf("Thank you for re-subscribing %s for 1 month! %s", sub, emote))
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for re-subscribing for 1 month! %s", sub, emote))
 			return
 		}
 
 		months, err := strconv.Atoi(msg[:monthIndex])
 		if err != nil {
 			emotes := strings.Join(T.cp.channel.Emotes, " ")
-			T.cp.Say(fmt.Sprintf("Thank you %s for re-subscribing! %s", sub, emotes))
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", sub, emotes))
 			return
 		}
 
@@ -65,9 +58,6 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 			emotes = emotes + emote + " "
 		}
 
-		T.cp.Say(fmt.Sprintf("Thank you %s for re-subscribing, for %v months! %s", sub, months, emotes))
-
-		// viewer := T.cp.channel.ViewerList.FindViewer(username)
-		// T.cp.Say(fmt.Sprintf("%s has spent %s watching and has typed %d lines of chat.", sub, timeSpentString(viewer.GetTimeSpent()), viewer.GetLinesTyped()))
+		T.cp.Say(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", sub, months, emotes))
 	}
 }

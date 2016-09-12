@@ -165,7 +165,10 @@ func (B *Bot) Start() {
 					} else if strings.HasPrefix(special, "SPECIALUSER") {
 						// parts := strings.Split(special, " ")
 						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
-					} else {
+					}
+				} else if username == "tmi.twitch.tv" {
+					if e.Kind == "USERNOTICE" {
+						B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " "))
 					}
 				} else if username == "twitchnotify" {
 					B.processMessage(username, msg)
@@ -175,7 +178,6 @@ func (B *Bot) Start() {
 				} else {
 					B.processMessage(username, msg)
 				}
-
 			default: //ignore
 			}
 		// Whispers

@@ -121,7 +121,8 @@ func (C *Client) ReadLoop() chan Event {
 			if msg[0:1] == "@" {
 				space1 := strings.Index(msg, " ")
 				tagString := msg[:space1]
-				for _, s := range strings.Split(tagString, ";") {
+				tags := strings.Split(tagString, ";")
+				for _, s := range tags {
 					i := strings.Index(s, "=")
 					tags[s[:i]] = s[i+1:]
 				}
