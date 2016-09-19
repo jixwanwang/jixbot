@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var clientID = "1h9yzzub9sqjdic678tp7l5mjb1eqm7"
+
 type emoticonsAPIResponse struct {
 	Emoticons []Emote `"json:emoticons"`
 }
@@ -19,14 +21,23 @@ type Emote struct {
 	SubscriberOnly bool   `json:"subscriber_only"`
 }
 
-func GetEmotes(channel string) []string {
-	resp, err := http.Get("http://api.twitch.tv/kraken/chat/" + channel + "/emoticons?on_site=1")
+func makeRequest(method, url string) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		log.Printf("failed to do GET %v", err)
+		return nil, err
+	}
+	req.Header.Set("Client-ID", clientID)
+
+	return http.DefaultClient.Do(req)
+}
+
+func GetEmotes(channel string) []string {
+	resp, err := makeRequest("GET", "http://api.twitch.tv/kraken/chat/"+channel+"/emoticons?on_site=1")
+	if err != nil {
 		return []string{}
 	}
-
 	defer resp.Body.Close()
+
 	var emotes emoticonsAPIResponse
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&emotes)
@@ -50,7 +61,7 @@ type ircServers struct {
 }
 
 func GetIRCServer(channel, def string) string {
-	resp, err := http.Get("http://tmi.twitch.tv/servers?channel=" + channel)
+	resp, err := makeRequest("GET", "http://tmi.twitch.tv/servers?channel="+channel)
 	if err == nil {
 		defer resp.Body.Close()
 		var m ircServers
@@ -64,17 +75,20 @@ func GetIRCServer(channel, def string) string {
 }
 
 func GetIRCCluster(def string) string {
-	resp, err := http.Get("http://tmi.twitch.tv/servers?cluster=group")
-	if err == nil {
-		defer resp.Body.Close()
-		var m ircServers
-		dec := json.NewDecoder(resp.Body)
-		err := dec.Decode(&m)
-		if err == nil {
-			return m.Servers[rand.Intn(len(m.Servers))]
-		}
+	resp, err := makeRequest("GET", "http://tmi.twitch.tv/servers?cluster=group")
+	if err != nil {
+		return def
 	}
-	return def
+	defer resp.Body.Close()
+
+	var m ircServers
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&m)
+	if err != nil {
+		return def
+	}
+
+	return m.Servers[rand.Intn(len(m.Servers))]
 }
 
 type KrakenStream struct {
@@ -86,7 +100,7 @@ type Stream struct {
 }
 
 func LiveStream(channel string) *KrakenStream {
-	resp, err := http.Get("https://api.twitch.tv/kraken/streams/" + channel)
+	resp, err := makeRequest("GET", "https://api.twitch.tv/kraken/streams/"+channel)
 	if err != nil {
 		return nil
 	}
