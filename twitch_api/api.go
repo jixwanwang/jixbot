@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-var clientID = "1h9yzzub9sqjdic678tp7l5mjb1eqm7"
+var clientID = ""
+
+func SetClientID(id string) {
+	clientID = id
+}
 
 type emoticonsAPIResponse struct {
 	Emoticons []Emote `"json:emoticons"`

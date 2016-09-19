@@ -10,6 +10,7 @@ import (
 	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
+	"github.com/jixwanwang/jixbot/twitch_api"
 	"github.com/zenazn/goji/graceful"
 
 	_ "net/http/pprof"
@@ -22,6 +23,7 @@ func main() {
 
 	nickname := os.Getenv("NICKNAME")
 	oath := os.Getenv("OATH_TOKEN")
+	clientID := os.Getenv("CLIENT_ID")
 	twilioAccount := os.Getenv("TWILIO_ACCOUNT_SID")
 	twilioSecret := os.Getenv("TWILIO_SECRET")
 	twilioNumber := os.Getenv("TWILIO_NUMBER")
@@ -32,8 +34,9 @@ func main() {
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASS")
 	groupchat := os.Getenv("GROUPCHAT")
-
 	pastebin_key := os.Getenv("PASTEBIN_API_KEY")
+
+	twitch_api.SetClientID(clientID)
 
 	db, err := db.New(host, port, dbname, user, password)
 	if err != nil {
