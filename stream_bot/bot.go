@@ -165,7 +165,6 @@ func (B *Bot) Start() {
 					} else if strings.HasPrefix(special, "SPECIALUSER") {
 						// parts := strings.Split(special, " ")
 						// log.Printf("NOTICE: %s is a %s", parts[1], parts[2])
-					} else {
 					}
 				} else if username == "twitchnotify" {
 					B.processMessage(username, msg)
@@ -175,7 +174,12 @@ func (B *Bot) Start() {
 				} else {
 					B.processMessage(username, msg)
 				}
-
+			// Sub notification
+			case "USERNOTICE":
+				username := fromToUsername(e.From)
+				if username == "tmi.twitch.tv" {
+					B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
+				}
 			default: //ignore
 			}
 		// Whispers
