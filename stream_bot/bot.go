@@ -64,6 +64,9 @@ func New(channelName, username, oauth, groupchat string, texter messaging.Texter
 	return bot, nil
 }
 
+func (B *Bot) GetTextCommands() []db.TextCommand {
+	return B.commands.GetTextCommands()
+}
 func (B *Bot) AddActiveCommand(c string) {
 	B.commands.ActivateCommand(c)
 }

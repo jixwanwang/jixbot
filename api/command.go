@@ -7,6 +7,22 @@ import (
 	"github.com/zenazn/goji/web"
 )
 
+func (T *API) getTextCommands(C web.C, w http.ResponseWriter, r *http.Request) {
+	channel := C.URLParams["channel"]
+
+	bot, ok := T.bots[channel]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	r.ParseForm()
+
+	comms := bot.GetTextCommands()
+
+	serveJSON(w, comms)
+}
+
 func (T *API) getCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 	channel := C.URLParams["channel"]
 

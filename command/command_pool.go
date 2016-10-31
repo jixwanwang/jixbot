@@ -147,6 +147,15 @@ func (C *CommandPool) specialCommands() []Command {
 	}
 }
 
+func (C *CommandPool) GetTextCommands() []db.TextCommand {
+	comms, err := C.db.GetTextCommands(C.channel.GetChannelName())
+	if err != nil {
+		return []db.TextCommand{}
+	}
+
+	return comms
+}
+
 func (C *CommandPool) GetActiveCommands() []string {
 	comms := []string{}
 	for _, c := range C.specials {

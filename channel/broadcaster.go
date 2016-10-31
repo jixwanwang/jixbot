@@ -27,7 +27,7 @@ func NewBroadcaster(channel string) *Broadcaster {
 // Tolerance for stream crashes
 func (B *Broadcaster) checkOnline() {
 	stream := twitch_api.LiveStream(B.username)
-	if stream.Stream == nil {
+	if stream == nil || stream.Stream == nil {
 		if time.Since(B.lastOnline) > B.tolerance {
 			B.Online = false
 		}

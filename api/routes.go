@@ -56,6 +56,7 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 	mux.Put("/channels/properties/:channel", api.setProperty)
 
 	// Command modification
+	mux.Get("/commands/text/:channel", api.getTextCommands)
 	mux.Get("/commands/:channel", api.getCommands)
 	mux.Put("/commands/:channel", api.addCommands)
 	mux.Delete("/commands/:channel", api.deleteCommands)
@@ -87,5 +88,4 @@ func serveJSON(w http.ResponseWriter, v interface{}) {
 	}
 
 	w.Write(b)
-	w.WriteHeader(http.StatusOK)
 }

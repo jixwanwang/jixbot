@@ -66,6 +66,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	http.Handle("/dashboard/", http.StripPrefix("/dashboard/", http.FileServer(http.Dir("./public"))))
 	http.Handle("/", mux)
 
 	graceful.HandleSignals()
