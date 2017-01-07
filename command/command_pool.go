@@ -144,6 +144,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&questions{
 			cp: C,
 		},
+		&gamble{
+			cp: C,
+		},
 	}
 }
 
