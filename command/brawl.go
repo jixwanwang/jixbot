@@ -18,12 +18,14 @@ type brawl struct {
 	seasonComm       *subCommand
 	newSeasonComm    *subCommand
 	pileComm         *subCommand
+	betComm          *subCommand
 	statsComm        *subCommand
 	alltimeStatsComm *subCommand
 	statComm         *subCommand
 
 	season   int
 	brawlers map[string]string
+	totalBet int
 	active   bool
 }
 
@@ -38,6 +40,7 @@ func (T *brawl) Init() {
 
 	// username to weapon mapping
 	T.brawlers = map[string]string{}
+	T.totalBet = 0
 
 	T.brawlComm = &subCommand{
 		command:   "!brawl",
@@ -63,6 +66,13 @@ func (T *brawl) Init() {
 	T.pileComm = &subCommand{
 		command:   "!pileon",
 		numArgs:   0,
+		cooldown:  0,
+		clearance: channel.VIEWER,
+	}
+
+	T.betComm = &subCommand{
+		command:   "!bet",
+		numArgs:   1,
 		cooldown:  0,
 		clearance: channel.VIEWER,
 	}
@@ -113,21 +123,26 @@ func (T *brawl) endBrawl() {
 	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && winnerIndex < 2 {
 		winner = T.cp.channel.GetChannelName()
 	}
-	weapon := T.brawlers[winner]
+	// Tavern keeps some money for repairs
+	winnings := int(float64(T.totalBet * 0.9))
 
-	T.brawlers = map[string]string{}
+	weapon := T.brawlers[winner]
 
 	if len(weapon) > 0 {
 		var message string
-		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They take %v %ss from the betting pool.", winner, weapon, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	} else {
-		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 500 %ss from the losers.", winner, T.cp.channel.Currency)
+		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They take %v %ss from the betting pool.", winner, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	}
 
+	T.brawlers = map[string]string{}
+	T.totalBet = 0
+
 	winningUser, in := T.cp.channel.InChannel(winner)
 	if in {
+		winningUser.AddMoney(T.totalBet + 100)
 		winningUser.WinBrawl(T.season)
 	}
 
@@ -146,7 +161,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
+	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. You can also use !bet <amount> to make things interesting! Everyone, get in here! PogChamp"))
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {
@@ -189,6 +204,20 @@ func (T *brawl) Response(username, message string, whisper bool) {
 		} else {
 			T.brawlers[username] = ""
 		}
+
+		return
+	}
+
+	args, err = T.betComm.parse(message, clearance)
+	if err == nil && T.active == true {
+		user, in := T.cp.channel.InChannel(username)
+		if !in {
+			return
+		}
+
+		bet, _ := strconv.Atoi(args[0])
+		user.AddMoney(-bet)
+		T.totalBet += bet
 
 		return
 	}
