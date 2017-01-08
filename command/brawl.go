@@ -124,7 +124,7 @@ func (T *brawl) endBrawl() {
 		winner = T.cp.channel.GetChannelName()
 	}
 	// Tavern keeps some money for repairs
-	winnings := int(float64(T.totalBet * 0.9))
+	winnings := int(float64(T.totalBet) * 0.9)
 
 	weapon := T.brawlers[winner]
 
