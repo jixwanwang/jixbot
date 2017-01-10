@@ -25,7 +25,7 @@ type brawl struct {
 
 	season   int
 	brawlers map[string]string
-	totalBet int
+	betters  map[string]int
 	active   bool
 }
 
@@ -40,7 +40,7 @@ func (T *brawl) Init() {
 
 	// username to weapon mapping
 	T.brawlers = map[string]string{}
-	T.totalBet = 0
+	T.betters = map[string]int{}
 
 	T.brawlComm = &subCommand{
 		command:   "!brawl",
@@ -119,12 +119,15 @@ func (T *brawl) endBrawl() {
 
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
-	// Broadcaster has higher chance of winning if they piled on
-	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && winnerIndex < 2 {
-		winner = T.cp.channel.GetChannelName()
+
+	// Default winnings for no bet
+	winnings := 500
+
+	// If everyone bets, the expected winnings is same as the bet, so no one makes any money.
+	// However if not everyone bets, the expected winnings is less than the bet. Gambling always causes a loss ;P
+	if bet, ok := T.betters[winner]; ok {
+		winnings = bet * len(T.betters)
 	}
-	// Tavern keeps some money for repairs
-	winnings := int(float64(T.totalBet) * 0.9)
 
 	weapon := T.brawlers[winner]
 
@@ -138,11 +141,11 @@ func (T *brawl) endBrawl() {
 	}
 
 	T.brawlers = map[string]string{}
-	T.totalBet = 0
+	T.betters = map[string]int{}
 
 	winningUser, in := T.cp.channel.InChannel(winner)
 	if in {
-		winningUser.AddMoney(T.totalBet + 100)
+		winningUser.AddMoney(winnings)
 		winningUser.WinBrawl(T.season)
 	}
 
@@ -215,9 +218,14 @@ func (T *brawl) Response(username, message string, whisper bool) {
 			return
 		}
 
+		// don't allow multiple bets
+		if _, ok := T.betters[username]; ok {
+			return
+		}
+
 		bet, _ := strconv.Atoi(args[0])
 		user.AddMoney(-bet)
-		T.totalBet += bet
+		T.betters[username] = bet
 
 		return
 	}
