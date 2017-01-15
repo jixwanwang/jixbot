@@ -236,7 +236,7 @@ func (T *brawl) Response(username, message string, whisper bool) {
 		}
 
 		bet, _ := strconv.Atoi(args[0])
-		if user.GetMoney() >= bet {
+		if user.GetMoney() >= bet && bet > 0 {
 			user.AddMoney(-bet)
 			T.betters[username] = T.betters[username] + bet
 		}
