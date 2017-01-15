@@ -138,7 +138,7 @@ func (T *brawl) endBrawl() {
 	// If everyone bets, the expected winnings is same as the bet, so no one makes any money.
 	// However if not everyone bets, the expected winnings is less than the bet. Gambling always causes a loss ;P
 	if bet, ok := T.betters[winner]; ok {
-		winnings = bet * len(T.betters)
+		winnings = int(float64(bet*len(T.betters)) * 0.9)
 	}
 
 	weapon := T.brawlers[winner]
