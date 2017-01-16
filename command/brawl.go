@@ -18,12 +18,14 @@ type brawl struct {
 	seasonComm       *subCommand
 	newSeasonComm    *subCommand
 	pileComm         *subCommand
+	betComm          *subCommand
 	statsComm        *subCommand
 	alltimeStatsComm *subCommand
 	statComm         *subCommand
 
 	season   int
 	brawlers map[string]string
+	betters  map[string]int
 	active   bool
 }
 
@@ -38,6 +40,7 @@ func (T *brawl) Init() {
 
 	// username to weapon mapping
 	T.brawlers = map[string]string{}
+	T.betters = map[string]int{}
 
 	T.brawlComm = &subCommand{
 		command:   "!brawl",
@@ -63,6 +66,13 @@ func (T *brawl) Init() {
 	T.pileComm = &subCommand{
 		command:   "!pileon",
 		numArgs:   0,
+		cooldown:  0,
+		clearance: channel.VIEWER,
+	}
+
+	T.betComm = &subCommand{
+		command:   "!bet",
+		numArgs:   1,
 		cooldown:  0,
 		clearance: channel.VIEWER,
 	}
@@ -101,33 +111,53 @@ func (T *brawl) endBrawl() {
 
 	if len(users) == 1 {
 		T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
+		// refund bet
+		user, in := T.cp.channel.InChannel(users[0])
+		if in {
+			user.AddMoney(T.betters[users[0]])
+		}
 		return
 	} else if len(users) < 5 {
 		T.cp.Say(fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
+		// refund bets
+		for _, u := range users {
+			user, in := T.cp.channel.InChannel(u)
+			if in {
+				user.AddMoney(T.betters[u])
+			}
+		}
 		return
 	}
 
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
-	// Broadcaster has higher chance of winning if they piled on
-	if _, ok := T.brawlers[T.cp.channel.GetChannelName()]; ok && winnerIndex < 2 {
-		winner = T.cp.channel.GetChannelName()
-	}
-	weapon := T.brawlers[winner]
 
-	T.brawlers = map[string]string{}
+	// Default winnings for no bet
+	winnings := 500
+
+	// If everyone bets, the expected winnings is same as the bet, so no one makes any money.
+	// However if not everyone bets, the expected winnings is less than the bet. Gambling always causes a loss ;P
+	if bet, ok := T.betters[winner]; ok {
+		winnings = int(float64(bet*len(T.betters)) * 0.9)
+	}
+
+	weapon := T.brawlers[winner]
 
 	if len(weapon) > 0 {
 		var message string
-		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They loot 500 %ss from the losers.", winner, weapon, T.cp.channel.Currency)
+		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They take %v %ss from the betting pool.", winner, weapon, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	} else {
-		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They loot 500 %ss from the losers.", winner, T.cp.channel.Currency)
+		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They take %v %ss from the betting pool.", winner, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	}
 
+	T.brawlers = map[string]string{}
+	T.betters = map[string]int{}
+
 	winningUser, in := T.cp.channel.InChannel(winner)
 	if in {
+		winningUser.AddMoney(winnings)
 		winningUser.WinBrawl(T.season)
 	}
 
@@ -146,7 +176,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon to join the fight! You can also use a weapon using !pileon <weapon>! Everyone, get in here! PogChamp"))
+	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. You can also use !bet <amount> to make things interesting! Everyone, get in here! PogChamp"))
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {
@@ -188,6 +218,27 @@ func (T *brawl) Response(username, message string, whisper bool) {
 			T.brawlers[username] = args[0]
 		} else {
 			T.brawlers[username] = ""
+		}
+
+		return
+	}
+
+	args, err = T.betComm.parse(message, clearance)
+	if err == nil && T.active == true {
+		user, in := T.cp.channel.InChannel(username)
+		if !in {
+			return
+		}
+
+		// don't allow multiple bets
+		if _, ok := T.betters[username]; ok {
+			return
+		}
+
+		bet, _ := strconv.Atoi(args[0])
+		if user.GetMoney() >= bet && bet > 0 {
+			user.AddMoney(-bet)
+			T.betters[username] = T.betters[username] + bet
 		}
 
 		return
