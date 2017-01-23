@@ -207,7 +207,7 @@ func (T *brawl) Response(username, message string, whisper bool) {
 		}
 
 		if len(args) > 0 {
-			weapon := args[1]
+			weapon := args[0]
 			firstArg := strings.Split(weapon, " ")[0]
 			if strings.Index(firstArg, "bet=") == 0 {
 				bet, _ := strconv.Atoi(strings.TrimPrefix(firstArg, "bet="))
