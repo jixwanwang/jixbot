@@ -18,7 +18,6 @@ type brawl struct {
 	seasonComm       *subCommand
 	newSeasonComm    *subCommand
 	pileComm         *subCommand
-	betComm          *subCommand
 	statsComm        *subCommand
 	alltimeStatsComm *subCommand
 	statComm         *subCommand
@@ -66,13 +65,6 @@ func (T *brawl) Init() {
 	T.pileComm = &subCommand{
 		command:   "!pileon",
 		numArgs:   0,
-		cooldown:  0,
-		clearance: channel.VIEWER,
-	}
-
-	T.betComm = &subCommand{
-		command:   "!bet",
-		numArgs:   1,
 		cooldown:  0,
 		clearance: channel.VIEWER,
 	}
@@ -176,7 +168,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. You can also use !bet <amount> to make things interesting! Everyone, get in here! PogChamp"))
+	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. Add 'bet=<amount>' to your !pileon to make throw some money into the mix! Everyone, get in here! PogChamp"))
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {
@@ -209,36 +201,26 @@ func (T *brawl) Response(username, message string, whisper bool) {
 
 	args, err := T.pileComm.parse(message, clearance)
 	if err == nil && T.active == true {
-		_, in := T.cp.channel.InChannel(username)
-		if !in {
-			return
-		}
-
-		if len(args) > 0 {
-			T.brawlers[username] = args[0]
-		} else {
-			T.brawlers[username] = ""
-		}
-
-		return
-	}
-
-	args, err = T.betComm.parse(message, clearance)
-	if err == nil && T.active == true {
 		user, in := T.cp.channel.InChannel(username)
 		if !in {
 			return
 		}
 
-		// don't allow multiple bets
-		if _, ok := T.betters[username]; ok {
-			return
-		}
+		if len(args) > 0 {
+			weapon := args[1]
+			firstArg := strings.Split(weapon, " ")[0]
+			if strings.Index(firstArg, "bet=") == 0 {
+				bet, _ := strconv.Atoi(strings.TrimPrefix(firstArg, "bet="))
+				weapon = strings.TrimPrefix(weapon, firstArg+" ")
+				if user.GetMoney() >= bet && bet > 0 {
+					user.AddMoney(-bet)
+					T.betters[username] = T.betters[username] + bet
+				}
+			}
 
-		bet, _ := strconv.Atoi(args[0])
-		if user.GetMoney() >= bet && bet > 0 {
-			user.AddMoney(-bet)
-			T.betters[username] = T.betters[username] + bet
+			T.brawlers[username] = weapon
+		} else {
+			T.brawlers[username] = ""
 		}
 
 		return
