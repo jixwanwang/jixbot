@@ -211,7 +211,7 @@ func (T *brawl) Response(username, message string, whisper bool) {
 			firstArg := strings.Split(weapon, " ")[0]
 			if strings.Index(firstArg, "bet=") == 0 {
 				bet, _ := strconv.Atoi(strings.TrimPrefix(firstArg, "bet="))
-				weapon = strings.TrimPrefix(weapon, firstArg+" ")
+				weapon = strings.TrimSpace(strings.TrimPrefix(weapon, firstArg))
 				if user.GetMoney() >= bet && bet > 0 {
 					user.AddMoney(-bet)
 					T.betters[username] = T.betters[username] + bet
