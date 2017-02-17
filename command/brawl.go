@@ -168,7 +168,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. Add 'bet=<amount>' to your !pileon to make throw some money into the mix! Everyone, get in here! PogChamp"))
+	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. Add 'bet=<amount>' to your !pileon to throw some money into the mix! Everyone, get in here! PogChamp"))
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {
