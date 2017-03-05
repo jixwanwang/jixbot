@@ -36,6 +36,7 @@ func (T *summon) Response(username, message string, whisper bool) {
 				mentions = append(mentions, t)
 			}
 		}
+		mentions = append(mentions, time.Now())
 
 		// Send text
 		if len(mentions) >= 2 && time.Since(T.lastSent) > 10*time.Minute {
