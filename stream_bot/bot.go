@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	creator = "jixwanwang"
+	creator = "jix_bot"
 )
 
 type Bot struct {

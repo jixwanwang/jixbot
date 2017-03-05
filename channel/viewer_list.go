@@ -124,7 +124,7 @@ func (V *ViewerList) AllViewers() []*Viewer {
 }
 
 func (V *ViewerList) GetLevel(username string) Level {
-	if username == "jixwanwang" {
+	if username == "jix_bot" {
 		return GOD
 	} else if username == V.channel {
 		return BROADCASTER
