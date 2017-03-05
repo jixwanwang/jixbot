@@ -44,5 +44,7 @@ func (T *summon) Response(username, message string, whisper bool) {
 			T.cp.texter.SendText(fmt.Sprintf("[%s] %s: %s", T.cp.channel.GetChannelName(), username, message))
 			T.cp.Say(fmt.Sprintf("Jix has been summoned! PogChamp"))
 		}
+
+		T.mentions = mentions
 	}
 }
