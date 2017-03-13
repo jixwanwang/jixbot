@@ -13,14 +13,13 @@ import (
 )
 
 type brawl struct {
-	cp               *CommandPool
-	brawlComm        *subCommand
-	seasonComm       *subCommand
-	newSeasonComm    *subCommand
-	pileComm         *subCommand
-	statsComm        *subCommand
-	alltimeStatsComm *subCommand
-	statComm         *subCommand
+	cp            *CommandPool
+	brawlComm     *subCommand
+	seasonComm    *subCommand
+	newSeasonComm *subCommand
+	pileComm      *subCommand
+	statsComm     *subCommand
+	statComm      *subCommand
 
 	season   int
 	brawlers map[string]string
@@ -51,14 +50,14 @@ func (T *brawl) Init() {
 	T.seasonComm = &subCommand{
 		command:   "!brawlseason",
 		numArgs:   0,
-		cooldown:  15 * time.Second,
+		cooldown:  30 * time.Second,
 		clearance: channel.VIEWER,
 	}
 
 	T.newSeasonComm = &subCommand{
 		command:   "!newbrawlseason",
 		numArgs:   0,
-		cooldown:  12 * time.Second,
+		cooldown:  1 * time.Hour,
 		clearance: channel.BROADCASTER,
 	}
 
@@ -71,15 +70,15 @@ func (T *brawl) Init() {
 
 	T.statsComm = &subCommand{
 		command:   "!brawlstats",
-		numArgs:   1,
-		cooldown:  15 * time.Second,
+		numArgs:   0,
+		cooldown:  30 * time.Second,
 		clearance: channel.VIEWER,
 	}
 
 	T.statComm = &subCommand{
 		command:   "!brawlwins",
 		numArgs:   0,
-		cooldown:  5 * time.Second,
+		cooldown:  200 * time.Millisecond,
 		clearance: channel.VIEWER,
 	}
 }
@@ -196,6 +195,9 @@ func (T *brawl) Response(username, message string, whisper bool) {
 		T.cp.Say(T.calculateBrawlStats(T.season))
 		T.season = T.season + 1
 		T.cp.Say(fmt.Sprintf("The brawl season has ended! We are now in season %d.", T.season))
+
+		// allow brawling right away to persist the new season
+		T.brawlComm.lastCalled = time.Now().Add(-1 * time.Hour)
 		return
 	}
 
@@ -226,23 +228,43 @@ func (T *brawl) Response(username, message string, whisper bool) {
 		return
 	}
 
-	_, err = T.statComm.parse(message, clearance)
+	args, err = T.statComm.parse(message, clearance)
 	if err == nil {
 		user, in := T.cp.channel.InChannel(username)
 		if in {
-			brawlsWon := user.GetBrawlsWon()
-			wins, ok := brawlsWon[T.season]
-			if !ok {
-				wins = 0
+			season := T.season
+			if len(args) > 0 {
+				s, err := strconv.Atoi(args[0])
+				if err == nil {
+					season = s
+				}
 			}
-			T.cp.Say(fmt.Sprintf("@%s you have won %d brawls this season", username, wins))
+
+			brawlsWon := user.GetBrawlsWon()
+			wins := brawlsWon[season]
+			if season == T.season {
+				T.cp.Say(fmt.Sprintf("@%s you have won %d brawls this season", username, wins))
+			} else {
+				T.cp.Say(fmt.Sprintf("@%s you won %d brawls in season %v", username, wins, season))
+			}
 			return
 		}
 	}
 
 	args, err = T.statsComm.parse(message, clearance)
 	if err == nil {
-		season, _ := strconv.Atoi(args[0])
+		season := T.season
+		if len(args) > 0 {
+			if args[0] == "all" {
+				season = 0
+			}
+
+			s, err := strconv.Atoi(args[0])
+			if err == nil {
+				season = s
+			}
+		}
+
 		T.cp.Say(T.calculateBrawlStats(season))
 		return
 	}

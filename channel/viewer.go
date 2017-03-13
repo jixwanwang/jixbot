@@ -6,6 +6,8 @@ import (
 	"github.com/jixwanwang/jixbot/db"
 )
 
+const JIXBOT_CREATOR = "jix_bot"
+
 var blacklistedUsers = map[string]int{
 	"nightbot":     0,
 	"moobot":       0,

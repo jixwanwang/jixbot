@@ -19,7 +19,13 @@ var responses = []string{
 	`Nice to meet you %s, I'm a nice bot MrDestructoid`,
 	`What's up %s`,
 	`/me waits for %s to say more`,
+	`Tell me about it %s`,
 	`Cool story %s, tell it again Kappa`,
+}
+
+var sympathy = []string{
+	`That sucks %s :(`,
+	`I'm sorry to hear that %s :(`,
 }
 
 type conversation struct {
@@ -28,9 +34,7 @@ type conversation struct {
 	lastResponse time.Time
 }
 
-func (T *conversation) Init() {
-
-}
+func (T *conversation) Init() {}
 
 func (T *conversation) ID() string {
 	return "conversation"
@@ -51,5 +55,11 @@ func (T *conversation) Response(username, message string, whisper bool) {
 	} else if strings.Index(message, "HeyGuys") >= 0 {
 		T.lastResponse = time.Now()
 		T.cp.Say(fmt.Sprintf(compliments[rand.Intn(len(compliments))], username))
+	} else if (strings.Index(message, ":(") >= 0 ||
+		strings.Index(message, ":'(") >= 0 ||
+		strings.Index(message, ":d") >= 0 ||
+		strings.Index(message, "BibleThump") >= 0) && len(strings.Split(message, " ")) > 7 {
+		T.lastResponse = time.Now()
+		T.cp.Say(fmt.Sprintf(sympathy[rand.Intn(len(compliments))], username))
 	}
 }

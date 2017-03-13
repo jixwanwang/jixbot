@@ -35,12 +35,10 @@ func (T *API) getChannelInfo(C web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emotes := bot.GetEmotes()
 	commands := bot.GetActiveCommands()
 	props := bot.GetProperties()
 
 	serveJSON(w, map[string]interface{}{
-		"emotes":     emotes,
 		"commands":   commands,
 		"properties": props,
 	})

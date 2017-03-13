@@ -11,25 +11,30 @@ import (
 )
 
 type addCommand struct {
-	cp       *CommandPool
-	plebComm *subCommand
-	modComm  *subCommand
+	cp         *CommandPool
+	plebComm   *subCommand
+	modComm    *subCommand
+	deleteComm *subCommand
 }
 
 func (T *addCommand) Init() {
 	T.plebComm = &subCommand{
-		command:    "!addcommand",
-		numArgs:    1,
-		cooldown:   1 * time.Second,
-		lastCalled: time.Now().Add(-1 * time.Second),
-		clearance:  channel.MOD,
+		command:   "!addcommand",
+		numArgs:   1,
+		cooldown:  1 * time.Second,
+		clearance: channel.MOD,
 	}
 	T.modComm = &subCommand{
-		command:    "!addmodcommand",
-		numArgs:    1,
-		cooldown:   1 * time.Second,
-		lastCalled: time.Now().Add(-1 * time.Second),
-		clearance:  channel.MOD,
+		command:   "!addmodcommand",
+		numArgs:   1,
+		cooldown:  1 * time.Second,
+		clearance: channel.MOD,
+	}
+	T.deleteComm = &subCommand{
+		command:   "!deletecommand",
+		numArgs:   1,
+		cooldown:  1 * time.Second,
+		clearance: channel.MOD,
 	}
 }
 
@@ -47,13 +52,26 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		return
 	}
 
+	args, err := T.deleteComm.parse(message, clearance)
+	if err == nil {
+		command := strings.ToLower(args[0])
+		for i, c := range T.cp.commands {
+			if c.command == command {
+				T.cp.db.DeleteTextCommand(T.cp.channel.GetChannelName(), command)
+				T.cp.commands = append(T.cp.commands[:i], T.cp.commands[i+1:]...)
+				T.cp.Say(fmt.Sprintf("@%s Command %s deleted", username, command))
+				return
+			}
+		}
+	}
+
 	var comm *textCommand
 	comm = &textCommand{
 		cp:       T.cp,
 		cooldown: defaultCooldown,
 	}
 
-	args, err := T.plebComm.parse(message, clearance)
+	args, err = T.plebComm.parse(message, clearance)
 	if err == nil && len(args) > 1 {
 		comm.clearance = channel.VIEWER
 		comm.command = strings.ToLower(args[0])
@@ -101,23 +119,6 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 
 			T.cp.Say(fmt.Sprintf("@%s Command %s updated", username, comm.command))
 			return
-		}
-	}
-
-	if T.cp.channel.GetLevel(username) == channel.GOD {
-		for i, c := range T.cp.globalcommands {
-			if c.command == comm.command {
-				tc := db.TextCommand{
-					Clearance: int(comm.clearance),
-					Command:   comm.command,
-					Response:  comm.response,
-					Cooldown:  comm.cooldown,
-				}
-				T.cp.db.UpdateTextCommand("_global", tc)
-				T.cp.globalcommands[i] = comm
-				T.cp.Say(fmt.Sprintf("@%s Global command %s updated", username, comm.command))
-				return
-			}
 		}
 	}
 
