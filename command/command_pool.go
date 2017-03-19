@@ -18,10 +18,9 @@ type CommandPool struct {
 	pasteBin pastebin.Client
 	db       db.DB
 
-	specials       []Command
-	enabled        map[string]bool
-	commands       []*textCommand
-	globalcommands []*textCommand
+	specials []Command
+	enabled  map[string]bool
+	commands []*textCommand
 
 	modOnly bool
 	subOnly bool
@@ -37,7 +36,6 @@ func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter mess
 		pasteBin: pasteBin,
 	}
 
-	globals := cp.loadTextCommands(globalChannel)
 	channels := cp.loadTextCommands(channel.GetChannelName())
 
 	specials := cp.specialCommands()
@@ -51,7 +49,6 @@ func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter mess
 		}
 	}
 	cp.commands = channels
-	cp.globalcommands = globals
 
 	return cp
 }
@@ -85,8 +82,9 @@ func (C *CommandPool) enabledCommands() map[string]bool {
 		allowed = map[string]bool{}
 	}
 
-	// Always enable info command
+	// Always enable info and failfish command
 	allowed["info"] = true
+	allowed["failfish"] = true
 
 	return allowed
 }
@@ -97,9 +95,6 @@ func (C *CommandPool) specialCommands() []Command {
 			cp: C,
 		},
 		&addCommand{
-			cp: C,
-		},
-		&deleteCommand{
 			cp: C,
 		},
 		&summon{
@@ -142,9 +137,6 @@ func (C *CommandPool) specialCommands() []Command {
 			cp: C,
 		},
 		&questions{
-			cp: C,
-		},
-		&gamble{
 			cp: C,
 		},
 	}
@@ -225,9 +217,6 @@ func (C *CommandPool) GetResponse(username, message string, whisper bool) {
 		if _, ok := C.enabled[c.ID()]; ok {
 			c.Response(username, message, whisper)
 		}
-	}
-	for _, c := range C.globalcommands {
-		c.Response(username, message, whisper)
 	}
 	for _, c := range C.commands {
 		c.Response(username, message, whisper)

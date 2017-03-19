@@ -117,25 +117,6 @@ func (V *Channel) GetProperties() map[string]interface{} {
 	}
 }
 
-func (V *Channel) AddEmote(e string) {
-	for _, emote := range V.Emotes {
-		if e == emote {
-			return
-		}
-	}
-	V.Emotes = append(V.Emotes, e)
-	V.db.AddChannelEmote(V.GetChannelName(), e)
-}
-
-func (V *Channel) DeleteEmote(e string) {
-	for i, emote := range V.Emotes {
-		if e == emote {
-			V.Emotes = append(V.Emotes[:i], V.Emotes[i+1:]...)
-			V.db.DeleteChannelEmote(V.GetChannelName(), e)
-		}
-	}
-}
-
 func (V *Channel) RecordMessage(username, msg string) {
 	v, ok := V.ViewerList.InChannel(username)
 	if !ok {

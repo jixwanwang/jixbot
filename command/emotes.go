@@ -17,6 +17,8 @@ var adjectives = []string{
 	"awesome",
 	"exciting",
 	"fabulous",
+	"lit",
+	"smashing",
 }
 
 type emotes struct {
@@ -46,8 +48,10 @@ func (T *emotes) Response(username, message string, whisper bool) {
 	clearance := T.cp.channel.GetLevel(username)
 
 	_, err := T.emotes.parse(message, clearance)
-	if err == nil {
-		adjective := adjectives[rand.Intn(len(adjectives))]
-		T.cp.Say(fmt.Sprintf("Subscribe to get access to these %s emotes: %s", adjective, strings.Join(T.cp.channel.Emotes, " ")))
+	if err != nil || len(T.cp.channel.Emotes) == 0 {
+		return
 	}
+
+	adjective := adjectives[rand.Intn(len(adjectives))]
+	T.cp.Say(fmt.Sprintf("Subscribe to get access to these %s emotes: %s", adjective, strings.Join(T.cp.channel.Emotes, " ")))
 }

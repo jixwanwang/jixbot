@@ -14,10 +14,6 @@ import (
 	"github.com/jixwanwang/jixbot/twitch_api"
 )
 
-const (
-	creator = "jix_bot"
-)
-
 type Bot struct {
 	username    string
 	groupchat   string
@@ -76,17 +72,6 @@ func (B *Bot) GetActiveCommands() []string {
 func (B *Bot) DeleteCommand(c string) {
 	B.commands.DeleteCommand(c)
 }
-
-func (B *Bot) AddEmote(e string) {
-	B.channel.AddEmote(e)
-}
-func (B *Bot) GetEmotes() []string {
-	return B.channel.Emotes
-}
-func (B *Bot) DeleteEmote(e string) {
-	B.channel.DeleteEmote(e)
-}
-
 func (B *Bot) SetProperty(k, v string) {
 	B.channel.SetProperty(k, v)
 }

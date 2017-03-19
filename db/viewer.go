@@ -1,9 +1,7 @@
 package db
 
 func (B *dbImpl) NewViewer(username, channel string) (id int, err error) {
-	// TODO: This double query is bad, should be a QueryRow with a RETURNING
-	B.db.Exec("INSERT INTO viewers (username, channel) VALUES ($1, $2)", username, channel)
-	row := B.db.QueryRow("SELECT id FROM viewers WHERE username=$1 AND channel=$2", username, channel)
+	row := B.db.QueryRow("INSERT INTO viewers (username, channel) VALUES ($1, $2) RETURNING id", username, channel)
 	err = row.Scan(&id)
 	return
 }

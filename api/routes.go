@@ -61,11 +61,6 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 	mux.Put("/commands/:channel", api.addCommands)
 	mux.Delete("/commands/:channel", api.deleteCommands)
 
-	// Emote modification
-	mux.Get("/emotes/:channel", api.getEmotes)
-	mux.Put("/emotes/:channel", api.addEmotes)
-	mux.Delete("/emotes/:channel", api.deleteEmotes)
-
 	return mux, api, nil
 }
 

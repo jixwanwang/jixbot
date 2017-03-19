@@ -15,10 +15,6 @@ const (
 	GOD         Level = 12
 )
 
-func init() {
-	// TODO: Load known staff
-}
-
 // Represents the list of viewers that are in a channel.
 type ViewerList struct {
 	channel string
@@ -124,7 +120,7 @@ func (V *ViewerList) AllViewers() []*Viewer {
 }
 
 func (V *ViewerList) GetLevel(username string) Level {
-	if username == "jix_bot" {
+	if username == JIXBOT_CREATOR {
 		return GOD
 	} else if username == V.channel {
 		return BROADCASTER

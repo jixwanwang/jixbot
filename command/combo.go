@@ -16,7 +16,6 @@ type combo struct {
 }
 
 func (T *combo) Init() {
-	T.lastCombo = time.Now().Add(-10 * time.Minute)
 	T.active = false
 	T.activeCombo = ""
 }
@@ -30,7 +29,6 @@ func (T *combo) Response(username, message string, whisper bool) {
 		return
 	}
 
-	// TODO: make sub only maybe?
 	if T.active && time.Since(T.lastCombo).Minutes() > 3 {
 		T.active = false
 		T.activeCombo = ""

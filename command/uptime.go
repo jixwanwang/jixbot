@@ -19,7 +19,7 @@ func (T *uptime) Init() {
 	T.upComm = &subCommand{
 		command:    "!uptime",
 		numArgs:    0,
-		cooldown:   15 * time.Second,
+		cooldown:   30 * time.Second,
 		lastCalled: time.Now().Add(-15 * time.Second),
 		clearance:  channel.VIEWER,
 	}

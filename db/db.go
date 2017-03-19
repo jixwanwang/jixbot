@@ -8,8 +8,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// TODO: write actual functions for the interface for database.
-
 type DB interface {
 	GetChannelProperties(channel string) (map[string]string, error)
 	SetChannelProperty(channel, k, v string) error
