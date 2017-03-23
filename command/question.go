@@ -65,7 +65,7 @@ func (T *questions) Response(username, message string, whisper bool) {
 		return
 	}
 
-	message = strings.TrimSpace(strings.ToLower(message))
+	message = strings.TrimSpace(message)
 
 	clearance := T.cp.channel.GetLevel(username)
 
@@ -82,6 +82,8 @@ func (T *questions) Response(username, message string, whisper bool) {
 			return
 		}
 	}
+
+	message = strings.ToLower(message)
 
 	// Check for questionness
 	if !(T.questionRgx.MatchString(message) || message[len(message)-1:] == "?") {
