@@ -11,9 +11,9 @@ import (
 )
 
 type CommandPool struct {
-	channel  *channel.Channel
-	irc      *irc.Client
-	ircW     *irc.Client
+	channel *channel.Channel
+	irc     *irc.TwitchChatClient
+
 	texter   messaging.Texter
 	pasteBin pastebin.Client
 	db       db.DB
@@ -26,11 +26,10 @@ type CommandPool struct {
 	subOnly bool
 }
 
-func NewCommandPool(channel *channel.Channel, irc, ircW *irc.Client, texter messaging.Texter, pasteBin pastebin.Client, db db.DB) *CommandPool {
+func NewCommandPool(channel *channel.Channel, irc *irc.TwitchChatClient, texter messaging.Texter, pasteBin pastebin.Client, db db.DB) *CommandPool {
 	cp := &CommandPool{
 		channel:  channel,
 		irc:      irc,
-		ircW:     ircW,
 		db:       db,
 		texter:   texter,
 		pasteBin: pasteBin,
@@ -197,11 +196,15 @@ func (C *CommandPool) DeleteCommand(command string) {
 }
 
 func (C *CommandPool) Say(message string) {
-	C.irc.Say("#"+C.channel.GetChannelName(), message)
+	C.irc.Say(message)
+}
+
+func (C *CommandPool) FancySay(message string) {
+	C.irc.FancySay(message)
 }
 
 func (C *CommandPool) Whisper(username, message string) {
-	C.ircW.Whisper(username, message)
+	C.irc.Whisper(username, message)
 }
 
 func (C *CommandPool) GetResponse(username, message string, whisper bool) {

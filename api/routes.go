@@ -1,48 +1,20 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 
-	"github.com/jixwanwang/jixbot/messaging"
-	"github.com/jixwanwang/jixbot/pastebin"
 	"github.com/jixwanwang/jixbot/stream_bot"
 	"github.com/zenazn/goji/web"
 )
 
 type API struct {
-	nickname  string
-	oath      string
-	groupchat string
-	db        *sql.DB
-	texter    messaging.Texter
-	pasteBin  pastebin.Client
-
-	bots map[string]*stream_bot.Bot
+	bots *stream_bot.BotPool
 }
 
-func NewAPI(channels []string, nickname, oath, groupchat string, texter messaging.Texter, pb pastebin.Client, db *sql.DB) (http.Handler, *API, error) {
+func NewAPI(bots *stream_bot.BotPool) (http.Handler, *API, error) {
 	api := &API{
-		nickname:  nickname,
-		oath:      oath,
-		groupchat: groupchat,
-		texter:    texter,
-		pasteBin:  pb,
-		db:        db,
-		bots:      map[string]*stream_bot.Bot{},
-	}
-
-	for _, channel := range channels {
-		log.Printf("loading bot for %s", channel)
-		b, err := stream_bot.New(channel, nickname, oath, groupchat, texter, pb, db)
-
-		if err != nil {
-			return nil, nil, err
-		}
-		api.bots[channel] = b
-		go b.Start()
+		bots: bots,
 	}
 
 	mux := web.New()
@@ -65,9 +37,7 @@ func NewAPI(channels []string, nickname, oath, groupchat string, texter messagin
 }
 
 func (T *API) Close() {
-	for _, b := range T.bots {
-		b.Shutdown()
-	}
+	T.bots.Shutdown()
 }
 
 func serveError(w http.ResponseWriter, err error) {

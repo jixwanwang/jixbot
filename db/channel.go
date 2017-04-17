@@ -1,5 +1,24 @@
 package db
 
+func (B *dbImpl) GetAllChannels() ([]string, error) {
+	rows, err := B.db.Query("SELECT DISTINCT(channel) FROM commands")
+	if err != nil {
+		return nil, err
+	}
+
+	channels := []string{}
+	for rows.Next() {
+		var channel string
+		err := rows.Scan(&channel)
+		if err == nil {
+			channels = append(channels, channel)
+		}
+	}
+	rows.Close()
+
+	return channels, nil
+}
+
 func (B *dbImpl) GetChannelProperties(channel string) (map[string]string, error) {
 	rows, err := B.db.Query("SELECT k, v FROM channel_properties WHERE channel=$1", channel)
 	if err != nil {

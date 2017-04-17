@@ -10,9 +10,9 @@ import (
 func (T *API) getTextCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 	channel := C.URLParams["channel"]
 
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
+	bot := T.bots.GetBot(channel)
+	if bot == nil {
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
@@ -26,9 +26,9 @@ func (T *API) getTextCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 func (T *API) getCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 	channel := C.URLParams["channel"]
 
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
+	bot := T.bots.GetBot(channel)
+	if bot == nil {
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
@@ -42,9 +42,9 @@ func (T *API) getCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 	channel := C.URLParams["channel"]
 
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
+	bot := T.bots.GetBot(channel)
+	if bot == nil {
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
@@ -62,9 +62,9 @@ func (T *API) addCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 func (T *API) deleteCommands(C web.C, w http.ResponseWriter, r *http.Request) {
 	channel := C.URLParams["channel"]
 
-	bot, ok := T.bots[channel]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
+	bot := T.bots.GetBot(channel)
+	if bot == nil {
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 

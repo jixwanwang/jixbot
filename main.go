@@ -4,13 +4,9 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 
 	"github.com/jixwanwang/jixbot/api"
-	"github.com/jixwanwang/jixbot/db"
-	"github.com/jixwanwang/jixbot/messaging"
-	"github.com/jixwanwang/jixbot/pastebin"
-	"github.com/jixwanwang/jixbot/twitch_api"
+	"github.com/jixwanwang/jixbot/stream_bot"
 	"github.com/zenazn/goji/graceful"
 
 	_ "net/http/pprof"
@@ -21,47 +17,12 @@ const ()
 func main() {
 	log.SetFlags(0)
 
-	nickname := os.Getenv("NICKNAME")
-	oath := os.Getenv("OATH_TOKEN")
-	clientID := os.Getenv("CLIENT_ID")
-	twilioAccount := os.Getenv("TWILIO_ACCOUNT_SID")
-	twilioSecret := os.Getenv("TWILIO_SECRET")
-	twilioNumber := os.Getenv("TWILIO_NUMBER")
-	myNumber := os.Getenv("JIX_NUMBER")
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	dbname := os.Getenv("DB_NAME")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASS")
-	groupchat := os.Getenv("GROUPCHAT")
-	pastebin_key := os.Getenv("PASTEBIN_API_KEY")
-
-	twitch_api.SetClientID(clientID)
-
-	db, err := db.New(host, port, dbname, user, password)
+	botPool, err := stream_bot.NewPool()
 	if err != nil {
-		log.Fatalf("Failed to create db: %s", err.Error())
+		log.Fatalf("failed to create bots: %v", err)
 	}
 
-	texter := messaging.NewTexter(twilioAccount, twilioSecret, twilioNumber, myNumber)
-	pasteBin := pastebin.NewClient(pastebin_key)
-
-	channels := []string{}
-	rows, err := db.Query("SELECT DISTINCT(channel) FROM commands")
-	if err != nil {
-		log.Fatalf("Failed to get channel list. %s", err.Error())
-	}
-	for rows.Next() {
-		var channel string
-		err := rows.Scan(&channel)
-		if err == nil {
-			channels = append(channels, channel)
-		}
-	}
-	rows.Close()
-	log.Printf("Channels being loaded: %v", channels)
-
-	mux, api, err := api.NewAPI(channels, nickname, oath, groupchat, texter, pasteBin, db)
+	mux, api, err := api.NewAPI(botPool)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

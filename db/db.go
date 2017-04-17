@@ -9,6 +9,8 @@ import (
 )
 
 type DB interface {
+	GetAllChannels() ([]string, error)
+
 	GetChannelProperties(channel string) (map[string]string, error)
 	SetChannelProperty(channel, k, v string) error
 
@@ -51,7 +53,7 @@ type dbImpl struct {
 
 var _ DB = new(dbImpl)
 
-func New(host, port, name, user, password string) (*sql.DB, error) {
+func New(host, port, name, user, password string) (DB, error) {
 	pgConnect := fmt.Sprintf("dbname=%s user=%s host=%s port=%s",
 		name, user, host, port)
 	if password != "" {
@@ -72,9 +74,5 @@ func New(host, port, name, user, password string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return db, nil
-}
-
-func NewDB(db *sql.DB) DB {
-	return &dbImpl{db: db}
+	return &dbImpl{db: db}, nil
 }
