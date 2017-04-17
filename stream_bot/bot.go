@@ -1,63 +1,43 @@
 package stream_bot
 
 import (
-	"database/sql"
 	"log"
 	"strings"
 
 	"github.com/jixwanwang/jixbot/channel"
 	"github.com/jixwanwang/jixbot/command"
+	"github.com/jixwanwang/jixbot/config"
 	"github.com/jixwanwang/jixbot/db"
 	"github.com/jixwanwang/jixbot/irc"
 	"github.com/jixwanwang/jixbot/messaging"
 	"github.com/jixwanwang/jixbot/pastebin"
-	"github.com/jixwanwang/jixbot/twitch_api"
 )
 
 type Bot struct {
-	username    string
-	groupchat   string
-	client      *irc.Client
-	groupclient *irc.Client
-	commands    *command.CommandPool
-	channel     *channel.Channel
-	db          db.DB
-	texter      messaging.Texter
-	pasteBin    pastebin.Client
+	chat     *irc.TwitchChatClient
+	commands *command.CommandPool
+	channel  *channel.Channel
+	db       db.DB
+	texter   messaging.Texter
+	pasteBin pastebin.Client
 
 	shutdown chan int
 }
 
-func New(channelName, username, oauth, groupchat string, texter messaging.Texter, pb pastebin.Client, sqlDB *sql.DB) (*Bot, error) {
-	dbInterface := db.NewDB(sqlDB)
-
+func NewBot(channelName string, chat *irc.TwitchChatClient, texter messaging.Texter, pb pastebin.Client, db db.DB) *Bot {
 	bot := &Bot{
-		username:  username,
-		groupchat: groupchat,
-		shutdown:  make(chan int),
-		channel:   channel.New(channelName, dbInterface),
-		db:        dbInterface,
-		texter:    texter,
-		pasteBin:  pb,
+		chat:     chat,
+		shutdown: make(chan int),
+		channel:  channel.New(channelName, db),
+		db:       db,
+		texter:   texter,
+		pasteBin: pb,
 	}
 
-	log.Printf("starting up for %v", channelName)
-
-	chatServer := twitch_api.GetIRCServer(channelName, "irc.chat.twitch.tv:80")
-	log.Printf("chat server for %s: %s", channelName, chatServer)
-
-	groupServer := twitch_api.GetIRCCluster("irc.chat.twitch.tv:80")
-	log.Printf("group chat server for %s: %s", channelName, groupServer)
-
-	bot.client, _ = irc.New(chatServer, channelName, oauth, username, 10)
-	log.Printf("Connected to chat irc")
-	bot.groupclient, _ = irc.New(groupServer, groupchat, oauth, username, 10)
-	log.Printf("connected to group irc")
-
 	bot.reloadClients()
-	bot.commands = command.NewCommandPool(bot.channel, bot.client, bot.groupclient, texter, pb, dbInterface)
+	bot.commands = command.NewCommandPool(bot.channel, chat, texter, pb, db)
 
-	return bot, nil
+	return bot
 }
 
 func (B *Bot) GetTextCommands() []db.TextCommand {
@@ -80,12 +60,7 @@ func (B *Bot) GetProperties() map[string]interface{} {
 }
 
 func (B *Bot) reloadClients() {
-	err := B.client.Reload()
-	if err != nil {
-		log.Printf("%s", err.Error())
-	}
-
-	err = B.groupclient.Reload()
+	err := B.chat.Reload()
 	if err != nil {
 		log.Printf("%s", err.Error())
 	}
@@ -98,8 +73,7 @@ func (B *Bot) Shutdown() {
 }
 
 func (B *Bot) Start() {
-	reads := B.client.ReadLoop()
-	groupreads := B.groupclient.ReadLoop()
+	reads, groupreads := B.chat.ReadLoops()
 
 	for {
 		select {
@@ -156,9 +130,6 @@ func (B *Bot) Start() {
 					}
 				} else if username == "twitchnotify" {
 					B.processMessage(username, msg)
-				} else if msg == e.Message {
-					// Not of the channel, must be group chat
-					msg = strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
 				} else {
 					B.processMessage(username, msg)
 				}
@@ -181,7 +152,7 @@ func (B *Bot) Start() {
 			switch e.Kind {
 			case "PRIVMSG": // Message
 				username := fromToUsername(e.From)
-				msg := strings.TrimPrefix(e.Message, "#"+B.groupchat+" :")
+				msg := strings.TrimPrefix(e.Message, "#"+config.GroupChat+" :")
 				B.processMessage(username, msg)
 			case "WHISPER":
 				from := fromToUsername(e.From)

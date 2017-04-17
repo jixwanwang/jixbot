@@ -36,7 +36,7 @@ type Event struct {
 	Err     error
 }
 
-func New(server, channel, oauth, username string, messageRate int) (*Client, error) {
+func New(server, channel, oauth, username string, messageRate int) *Client {
 	client := &Client{
 		channel:     channel,
 		oauth:       oauth,
@@ -47,7 +47,7 @@ func New(server, channel, oauth, username string, messageRate int) (*Client, err
 
 	client.Reload()
 
-	return client, nil
+	return client
 }
 
 func (C *Client) Reload() error {
@@ -94,10 +94,6 @@ func (C *Client) Say(channel, msg string) {
 			t:       time.Now(),
 		})
 	}
-}
-
-func (C *Client) Whisper(to, msg string) {
-	C.Say("#"+C.channel, fmt.Sprintf("/w %s %s", to, msg))
 }
 
 func (C *Client) ReadLoop() chan Event {
