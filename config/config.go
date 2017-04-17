@@ -30,7 +30,7 @@ var (
 
 func init() {
 	Nickname = os.Getenv("NICKNAME")
-	OauthToken = os.Getenv("OATH_TOKEN")
+	OauthToken = os.Getenv("OAUTH_TOKEN")
 	FancyNickname = os.Getenv("FANCY_NICKNAME")
 	FancyOauthToken = os.Getenv("FANCY_OAUTH_TOKEN")
 	GroupChat = os.Getenv("GROUPCHAT")

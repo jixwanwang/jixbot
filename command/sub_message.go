@@ -31,7 +31,7 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 
 	msg := strings.ToLower(message)
 
-	if strings.Index(msg, "just subscribed!") > 0 || strings.Index(msg, "twitch prime") {
+	if strings.Index(msg, "just subscribed!") > 0 || strings.Index(msg, "twitch prime") > 0 {
 		sub := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
 		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
