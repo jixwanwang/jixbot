@@ -120,7 +120,7 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 		}
 		resp := regex.ReplaceAllString(T.response, "%s")
 
-		T.cp.FancySay(fmt.Sprintf(resp, responseArgs...))
+		T.cp.Say(fmt.Sprintf(resp, responseArgs...))
 	}
 }
 
