@@ -2,9 +2,12 @@ package command
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -27,10 +30,20 @@ type textCommand struct {
 	// Map from output argument index (for the response) to input argument index (from the command invocation)
 	argMappings  map[int]int
 	userMappings map[int]bool
+
+	urlRegex *regexp.Regexp
 }
 
 func (T *textCommand) Init() {
 	T.ValidateArguments()
+
+	urlRegex, err := regexp.Compile(`\$url:(\ )?((http|https):\/{2})?([0-9a-zA-Z_-]+\.)+[0-9a-zA-Z_-]+` +
+		`(\/([~0-9a-zA-Z\#\+\%\.\/\?=_-]+)?)?(\ )?\$`)
+	if err != nil {
+		log.Printf("url regex parse: %v", err)
+	}
+
+	T.urlRegex = urlRegex
 
 	if T.numArgs > 0 {
 		T.comm = &subCommand{
@@ -47,7 +60,6 @@ func (T *textCommand) Init() {
 			clearance: T.clearance,
 		}
 	}
-
 }
 
 func (T *textCommand) ValidateArguments() bool {
@@ -120,8 +132,40 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 		}
 		resp := regex.ReplaceAllString(T.response, "%s")
 
-		T.cp.Say(fmt.Sprintf(resp, responseArgs...))
+		response := fmt.Sprintf(resp, responseArgs...)
+
+		urlMatches := T.urlRegex.FindAllString(response, -1)
+		for _, match := range urlMatches {
+			url := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "url:"))
+
+			apiResponse, err := makeAPICall(url)
+			if err != nil {
+				T.cp.Say(fmt.Sprintf("There was an error with %s: %v", url, err))
+				return
+			}
+
+			response = strings.Replace(response, match, apiResponse, -1)
+		}
+
+		T.cp.Say(response)
 	}
+}
+
+func makeAPICall(url string) (string, error) {
+	if strings.Index(url, "http") < 0 {
+		url = "http://" + url
+	}
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Replace(string(b), "\n", " ", -1), nil
 }
 
 func (T *textCommand) String() string {

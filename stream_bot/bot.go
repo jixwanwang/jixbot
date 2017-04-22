@@ -144,7 +144,7 @@ func (B *Bot) Start() {
 		// Whispers
 		case e := <-groupreads:
 			if e.Err != nil {
-				log.Printf("Error %s, reloading irc client", e.Err.Error())
+				log.Printf("Error %s, reloading group irc client", e.Err.Error())
 				B.reloadClients()
 				continue
 			}
