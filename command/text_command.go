@@ -31,6 +31,8 @@ type textCommand struct {
 	argMappings  map[int]int
 	userMappings map[int]bool
 
+	isFancy bool
+
 	urlRegex *regexp.Regexp
 }
 
@@ -58,6 +60,15 @@ func (T *textCommand) Init() {
 			numArgs:   T.numArgs,
 			cooldown:  T.cooldown,
 			clearance: T.clearance,
+		}
+	}
+
+	if len(T.cp.channel.Emotes) > 0 {
+		for _, emote := range T.cp.channel.Emotes {
+			if strings.Index(T.response, emote) >= 0 {
+				T.isFancy = true
+				return
+			}
 		}
 	}
 }
@@ -147,7 +158,11 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 			response = strings.Replace(response, match, apiResponse, -1)
 		}
 
-		T.cp.Say(response)
+		if T.isFancy {
+			T.cp.FancySay(response)
+		} else {
+			T.cp.Say(response)
+		}
 	}
 }
 
