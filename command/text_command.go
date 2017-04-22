@@ -40,7 +40,7 @@ func (T *textCommand) Init() {
 	T.ValidateArguments()
 
 	urlRegex, err := regexp.Compile(`\$url:(\ )?((http|https):\/{2})?([0-9a-zA-Z_-]+\.)+[0-9a-zA-Z_-]+` +
-		`(\/([~0-9a-zA-Z\#\+\%\.\/\?=_-]+)?)?(\ )?\$`)
+		`(\/([~0-9a-zA-Z\#\+\%\.\/\?=&_-]+)?)?(\ )?\$`)
 	if err != nil {
 		log.Printf("url regex parse: %v", err)
 	}
