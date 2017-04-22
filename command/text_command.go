@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,8 +40,7 @@ type textCommand struct {
 func (T *textCommand) Init() {
 	T.ValidateArguments()
 
-	urlRegex, err := regexp.Compile(`\$url:(\ )?((http|https):\/{2})?([0-9a-zA-Z_-]+\.)+[0-9a-zA-Z_-]+` +
-		`(\/([~0-9a-zA-Z\#\+\%\.\/\?=&_-]+)?)?(\ )?\$`)
+	urlRegex, err := regexp.Compile(`\$url:(\ )?((http|https):\/{2})?([0-9a-zA-Z_-]+\.)+.*(\ )?\$`)
 	if err != nil {
 		log.Printf("url regex parse: %v", err)
 	}
@@ -147,11 +147,20 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 
 		urlMatches := T.urlRegex.FindAllString(response, -1)
 		for _, match := range urlMatches {
-			url := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "url:"))
-
-			apiResponse, err := makeAPICall(url)
+			uri := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "url:"))
+			raw, err := url.Parse(uri)
 			if err != nil {
-				T.cp.Say(fmt.Sprintf("There was an error with %s: %v", url, err))
+				T.cp.Say(fmt.Sprintf("Malformed url: %s", uri))
+				return
+			}
+
+			if i := strings.Index(uri, "?"); i >= 0 {
+				uri = uri[:i+1] + raw.Query().Encode()
+			}
+
+			apiResponse, err := makeAPICall(uri)
+			if err != nil {
+				T.cp.Say(fmt.Sprintf("There was an error with %s: %v", uri, err))
 				return
 			}
 
