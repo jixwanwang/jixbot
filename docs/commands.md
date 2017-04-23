@@ -18,6 +18,12 @@ Management
     * *-cd= sets a cooldown in seconds on the command*
     * *Example:* `!addcommand !usefulmessage Reminder that subscribing is not necessary to support the streamer!`
     * *Example:* `!addcommand !superspam -cd=30 SPAM SPAM Kappa SPAM`
+  * Can use `$u$` to substitute the invoking user, and `$0$`, `$1$`, etc to substitute arguments.
+    * *Example:* `!addcommand !userandargs user: $u$, second: $1$, first: $0$`
+    * *Example:* `!userandargs Kappa SMOrc SMOrc-> user: jixbot, second: SMOrc SMOrc, first: Kappa`
+  * Can use `$url: <url>$` to substitute an api call's response. The above substitutions are applied to the url
+    * *Example:* `!addcommand !url $url: http://www.dummyapi.com/text/$0$ $`
+    * *Example:* `!url hello -> the text passed into the api was "hello"`
   
 * **delete** (*M*)
   * `!deletecommand !<name>` - Deletes a text command
