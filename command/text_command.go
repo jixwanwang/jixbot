@@ -2,9 +2,13 @@ package command
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -27,10 +31,21 @@ type textCommand struct {
 	// Map from output argument index (for the response) to input argument index (from the command invocation)
 	argMappings  map[int]int
 	userMappings map[int]bool
+
+	isFancy bool
+
+	urlRegex *regexp.Regexp
 }
 
 func (T *textCommand) Init() {
 	T.ValidateArguments()
+
+	urlRegex, err := regexp.Compile(`\$url:(\ )?((http|https):\/{2})?([0-9a-zA-Z_-]+\.)+.*(\ )?\$`)
+	if err != nil {
+		log.Printf("url regex parse: %v", err)
+	}
+
+	T.urlRegex = urlRegex
 
 	if T.numArgs > 0 {
 		T.comm = &subCommand{
@@ -48,6 +63,14 @@ func (T *textCommand) Init() {
 		}
 	}
 
+	if len(T.cp.channel.Emotes) > 0 {
+		for _, emote := range T.cp.channel.Emotes {
+			if strings.Index(T.response, emote) >= 0 {
+				T.isFancy = true
+				return
+			}
+		}
+	}
 }
 
 func (T *textCommand) ValidateArguments() bool {
@@ -120,8 +143,53 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 		}
 		resp := regex.ReplaceAllString(T.response, "%s")
 
-		T.cp.Say(fmt.Sprintf(resp, responseArgs...))
+		response := fmt.Sprintf(resp, responseArgs...)
+
+		urlMatches := T.urlRegex.FindAllString(response, -1)
+		for _, match := range urlMatches {
+			uri := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "url:"))
+			raw, err := url.Parse(uri)
+			if err != nil {
+				T.cp.Say(fmt.Sprintf("Malformed url: %s", uri))
+				return
+			}
+
+			if i := strings.Index(uri, "?"); i >= 0 {
+				uri = uri[:i+1] + raw.Query().Encode()
+			}
+
+			apiResponse, err := makeAPICall(uri)
+			if err != nil {
+				T.cp.Say(fmt.Sprintf("There was an error with %s: %v", uri, err))
+				return
+			}
+
+			response = strings.Replace(response, match, apiResponse, -1)
+		}
+
+		if T.isFancy {
+			T.cp.FancySay(response)
+		} else {
+			T.cp.Say(response)
+		}
 	}
+}
+
+func makeAPICall(url string) (string, error) {
+	if strings.Index(url, "http") < 0 {
+		url = "http://" + url
+	}
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Replace(string(b), "\n", " ", -1), nil
 }
 
 func (T *textCommand) String() string {
