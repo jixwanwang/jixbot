@@ -18,6 +18,7 @@ type Channel struct {
 	// Other properties
 	Currency         string
 	SubName          string
+	BotIsSubbed      bool
 	ComboTrigger     string
 	ComboTriggers    []string
 	LineTypedReward  int
@@ -91,6 +92,8 @@ func (V *Channel) SetProperty(k, v string) {
 		V.Currency = v
 	} else if k == "subname" {
 		V.SubName = v
+	} else if k == "bot_is_subbed" {
+		V.BotIsSubbed = v == "true"
 	} else if k == "combo_trigger" {
 		V.ComboTrigger = v
 	} else if k == "combo_triggers" {
@@ -111,6 +114,7 @@ func (V *Channel) GetProperties() map[string]interface{} {
 	return map[string]interface{}{
 		"currency":            V.Currency,
 		"subname":             V.SubName,
+		"bot_is_subbed":       V.BotIsSubbed,
 		"combo_trigger":       V.ComboTrigger,
 		"line_typed_reward":   V.LineTypedReward,
 		"minute_spent_reward": V.MinuteSpentAward,
