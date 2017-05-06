@@ -114,6 +114,7 @@ func (V *Channel) GetProperties() map[string]interface{} {
 	return map[string]interface{}{
 		"currency":            V.Currency,
 		"subname":             V.SubName,
+		"bot_is_subbed":       V.BotIsSubbed,
 		"combo_trigger":       V.ComboTrigger,
 		"line_typed_reward":   V.LineTypedReward,
 		"minute_spent_reward": V.MinuteSpentAward,
