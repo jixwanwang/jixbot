@@ -66,7 +66,7 @@ func (T *textCommand) Init() {
 	if len(T.cp.channel.Emotes) > 0 {
 		for _, emote := range T.cp.channel.Emotes {
 			if strings.Index(T.response, emote) >= 0 {
-				T.isFancy = true
+				T.isFancy = !T.cp.channel.BotIsSubbed
 				return
 			}
 		}
