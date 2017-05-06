@@ -138,6 +138,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&questions{
 			cp: C,
 		},
+		&quotes{
+			cp: C,
+		},
 	}
 }
 

@@ -31,6 +31,11 @@ create table channel_properties (id serial primary key, channel text, k text, v 
 drop table if exists questions;
 create table questions (id serial primary key, channel text, question text, answer text);
 
+drop table if exists quotes;
+create table quotes (id serial primary key, channel text, rank int, quote text);
+create index quotes_channel on quotes(channel);
+create index quotes_rank on quotes(rank);
+
 insert into channels (username) values ('jixwanwang');
 
 insert into viewers (username, channel) values ('jixwanwang', 'jixwanwang');
