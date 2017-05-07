@@ -1,9 +1,6 @@
 package db
 
-import (
-	"database/sql"
-	"time"
-)
+import "time"
 
 func (B *dbImpl) GetCommands(channel string) (map[string]bool, error) {
 	rows, err := B.db.Query("SELECT command FROM commands WHERE channel=$1", channel)
@@ -81,42 +78,4 @@ func (B *dbImpl) UpdateTextCommand(channel string, comm TextCommand) error {
 func (B *dbImpl) DeleteTextCommand(channel, comm string) error {
 	_, err := B.db.Exec("DELETE FROM textcommands WHERE channel=$1 AND command=$2", channel, comm)
 	return err
-}
-
-func (B *dbImpl) GetQuote(channel string, rank int) (quote string, quoteRank int, err error) {
-	var row *sql.Row
-	if rank == 0 {
-		row = B.db.QueryRow(`SELECT quote, rank FROM quotes WHERE channel=$1 ORDER BY random() LIMIT 1`, channel)
-	} else {
-		row = B.db.QueryRow(`SELECT quote, rank FROM quotes WHERE channel=$1 AND rank=$2`, channel, rank)
-	}
-	err = row.Scan(&quote, &quoteRank)
-	return
-}
-
-func (B *dbImpl) AllQuotes(channel string) ([]string, error) {
-	rows, err := B.db.Query(`SELECT quote, rank FROM quotes WHERE channel=$1 ORDER BY rank ASC`, channel)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	quote := ""
-	quotes := []string{}
-	for rows.Next() {
-		rows.Scan(&quote)
-		quotes = append(quotes, quote)
-	}
-	return quotes, nil
-}
-
-func (B *dbImpl) AddQuote(channel string, quote string) (rank int, err error) {
-	row := B.db.QueryRow(`INSERT INTO quotes(rank, channel, quote) `+
-		`SELECT MAX(rank)+1 AS rank, channel, $2 AS quote `+
-		`FROM quotes WHERE channel=$1 GROUP BY channel `+
-		`UNION ALL SELECT 1, $1, $2 WHERE NOT EXISTS `+
-		`(SELECT 1 FROM quotes WHERE channel=$1) `+
-		`RETURNING rank`, channel, quote)
-	err = row.Scan(&rank)
-	return
 }

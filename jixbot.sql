@@ -32,7 +32,7 @@ drop table if exists questions;
 create table questions (id serial primary key, channel text, question text, answer text);
 
 drop table if exists quotes;
-create table quotes (id serial primary key, channel text, rank int, quote text);
+create table quotes (id serial primary key, channel text, quote_type text, rank int, quote text);
 create index quotes_channel on quotes(channel);
 create index quotes_rank on quotes(rank);
 
