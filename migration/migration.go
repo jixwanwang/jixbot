@@ -10,6 +10,7 @@ import (
 )
 
 const file = "output.txt"
+const file2 = "output2.txt"
 
 func main() {
 	host := os.Getenv("DB_HOST")
@@ -26,9 +27,22 @@ func main() {
 	quotes, _ := ioutil.ReadFile(file)
 	lines := strings.Split(string(quotes), "\n")
 	for _, line := range lines {
-		// rank, _ := strconv.Atoi(line[:strings.Index(line, ".")])
 		quote := line[strings.Index(line, ".")+2:]
 
-		database.AddQuote("hotform", quote)
+		_, err := database.AddQuote("hotform", "quote", quote)
+		if err != nil {
+			log.Printf("%v", err)
+		}
+	}
+
+	clips, _ := ioutil.ReadFile(file2)
+	lines = strings.Split(string(clips), "\n")
+	for _, line := range lines {
+		quote := line[strings.Index(line, ".")+2:]
+
+		_, err := database.AddQuote("hotform", "clip", quote)
+		if err != nil {
+			log.Printf("%v", err)
+		}
 	}
 }

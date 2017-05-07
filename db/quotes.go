@@ -55,7 +55,7 @@ func (B *dbImpl) AddQuote(channel, kind string, quote string) (rank int, err err
 		`SELECT channel, $2, MAX(rank)+1 AS rank, $3 AS quote `+
 		`FROM quotes WHERE channel=$1 AND quote_type=$2 GROUP BY channel `+
 		`UNION ALL SELECT $1, $2, 1, $3 WHERE NOT EXISTS `+
-		`(SELECT 1 FROM quotes WHERE channel=$1) `+
+		`(SELECT 1 FROM quotes WHERE channel=$1 AND quote_type=$2) `+
 		`RETURNING rank`, channel, kind, quote)
 	err = row.Scan(&rank)
 	return

@@ -33,7 +33,7 @@ create table questions (id serial primary key, channel text, question text, answ
 
 drop table if exists quotes;
 create table quotes (id serial primary key, channel text, quote_type text, rank int, quote text);
-create index quotes_channel on quotes(channel);
+create index quotes_channel_quote_type on quotes(channel, quote_type);
 create index quotes_rank on quotes(rank);
 
 insert into channels (username) values ('jixwanwang');
