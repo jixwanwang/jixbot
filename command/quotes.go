@@ -105,6 +105,13 @@ func (T *quotes) Response(username, message string, whisper bool) {
 
 	args, err = T.addClip.parse(message, clearance)
 	if err == nil {
+		if len(args) > 0 {
+			if strings.Index(args[0], "clips.twitch.tv/") < 0 {
+				T.cp.Say(fmt.Sprintf("@%s There's no clip in there DansGame", username))
+				return
+			}
+		}
+
 		T.addQuoteHelper(args, "clip")
 		return
 	}

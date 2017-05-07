@@ -52,7 +52,7 @@ func (T *info) Response(username, message string, whisper bool) {
 
 	_, err = T.version.parse(message, clearance)
 	if err == nil {
-		T.cp.Say("/me is v3.2")
+		T.cp.Say("/me is v3.3")
 	}
 
 	_, err = T.aboot.parse(message, clearance)
@@ -60,7 +60,6 @@ func (T *info) Response(username, message string, whisper bool) {
 		T.cp.Say(`/me was developed by staff member Jix on his free time. ` +
 			`Documentation of available commands at https://github.com/jixwanwang/jixbot/blob/master/docs/commands.md . ` +
 			`The commands need to be enabled by Jix to work. ` +
-			`Source code is available at https://github.com/jixwanwang/jixbot . ` +
-			`Any feedback would be appreciated!`)
+			`Any feedback would be appreciated (via Github issues)!`)
 	}
 }
