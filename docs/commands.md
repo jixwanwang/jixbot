@@ -24,7 +24,6 @@ Management
   * Can use `$url: <url>$` to substitute an api call's response. The above substitutions are applied to the url
     * *Example:* `!addcommand !url $url: http://www.dummyapi.com/text/$0$ $`
     * *Example:* `!url hello -> the text passed into the api was "hello"`
-  
 * **delete** (*M*)
   * `!deletecommand !<name>` - Deletes a text command
 * **modonly** (*M*)
@@ -44,7 +43,7 @@ Stats
 * **money** (*V*)
   * `!cash` - Whispers the caller how much currency they have
   * `!givecash <username> <amount>` - Gives `<amount>` coins to `<username>`. Whispers confirmation to both sender and receiver
-  
+
 Interactive commands
 ----------------
 These commands are meant to create and/or enhance chat interaction.
@@ -70,3 +69,21 @@ Misc commands
   * `!brawlstats <season or "all">` (*V*) - Display top brawl winners of season or overall
   * `!brawlwins <optional: season>` (*V*) - Show how many brawl wins the user has in a particular season (defaults to current season)
   * `!newbrawlseason` (*B*) - Start a new brawl season
+* **quotes**
+  * `!addquote` (*M*) - Add a text quote with the remaining text in the message
+  * `!quote` (*V*) - Get a quote.
+    * `!quote list` will dump all quotes into pastebin and post the link in chat.
+    * If a quote number is supplied, that quote will be retrieved if it exists
+    * If some text is supplied, a quote will be retrieved that contains that text
+    * If no argument is supplied, a random quote will be retrieved
+  * `!deletequote <quote number>` (*M*) - Delete a quote
+  * `!addclip` (*M*) - Add a clip with the remaining text in the message
+  * `!clip` (*V*) - Get a clip.
+    * `!clip list` will dump all clips into pastebin and post the link in chat.
+    * If a clip number is supplied, that clip will be retrieved if it exists
+    * If some text is supplied, a clip will be retrieved that contains that text
+    * If no argument is supplied, a random clip will be retrieved
+  * `!deletclip <clip number>` (*M*) - Delete a clip
+
+
+

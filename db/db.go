@@ -45,6 +45,12 @@ type DB interface {
 	RetrieveQuestionAnswers(channel string) ([]QuestionAnswer, error)
 	AddQuestionAnswer(channel, question, answer string) (QuestionAnswer, error)
 	UpdateQuestionAnswer(qa QuestionAnswer) error
+
+	GetQuote(channel string, kind string, rank int) (string, int, error)
+	SearchQuote(channel, kind, term string) (string, int, error)
+	AllQuotes(channel, kind string) ([]Quote, error)
+	AddQuote(channel, kind, quote string) (int, error)
+	DeleteQuote(channel, kind string, rank int) (int, error)
 }
 
 type dbImpl struct {
