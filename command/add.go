@@ -13,6 +13,7 @@ import (
 type addCommand struct {
 	cp         *CommandPool
 	plebComm   *subCommand
+	subComm    *subCommand
 	modComm    *subCommand
 	deleteComm *subCommand
 }
@@ -21,13 +22,19 @@ func (T *addCommand) Init() {
 	T.plebComm = &subCommand{
 		command:   "!addcommand",
 		numArgs:   1,
-		cooldown:  1 * time.Second,
+		cooldown:  5 * time.Second,
+		clearance: channel.MOD,
+	}
+	T.subComm = &subCommand{
+		command:   "!addsubcommand",
+		numArgs:   1,
+		cooldown:  5 * time.Second,
 		clearance: channel.MOD,
 	}
 	T.modComm = &subCommand{
 		command:   "!addmodcommand",
 		numArgs:   1,
-		cooldown:  1 * time.Second,
+		cooldown:  5 * time.Second,
 		clearance: channel.MOD,
 	}
 	T.deleteComm = &subCommand{
@@ -75,12 +82,18 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 	if err == nil && len(args) > 1 {
 		comm.clearance = channel.VIEWER
 		comm.command = strings.ToLower(args[0])
-	} else {
-		args, err = T.modComm.parse(message, clearance)
-		if err == nil && len(args) > 1 {
-			comm.clearance = channel.MOD
-			comm.command = strings.ToLower(args[0])
-		}
+	}
+
+	args, err = T.subComm.parse(message, clearance)
+	if err == nil && len(args) > 1 {
+		comm.clearance = channel.SUBSCRIBER
+		comm.command = strings.ToLower(args[0])
+	}
+
+	args, err = T.modComm.parse(message, clearance)
+	if err == nil && len(args) > 1 {
+		comm.clearance = channel.MOD
+		comm.command = strings.ToLower(args[0])
 	}
 
 	if args == nil || len(args) <= 1 {

@@ -52,7 +52,7 @@ func (T *info) Response(username, message string, whisper bool) {
 
 	_, err = T.version.parse(message, clearance)
 	if err == nil {
-		T.cp.Say("/me is v3.3. Most recent change: storing quotes and clips.")
+		T.cp.Say("/me is v3.4. Most recent change: sub only commands.")
 	}
 
 	_, err = T.aboot.parse(message, clearance)
