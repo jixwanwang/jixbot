@@ -14,7 +14,8 @@ Management
 ----------------
 * **add** (*M*)
   * `!addcommand !<name> <optional: -cd=seconds> <response>` - Adds a text command (overwrites existing)
-  * `!addmodcommand !<name> <optional: -cd=seconds> <response>` - Adds a text command only usable by mods. (overwrites existing)
+  * `!addsubcommand !<name> <optional: -cd=seconds> <response>` - Adds a text commands only usable by subs (overwrites existing)
+  * `!addmodcommand !<name> <optional: -cd=seconds> <response>` - Adds a text command only usable by mods (overwrites existing)
     * *-cd= sets a cooldown in seconds on the command*
     * *Example:* `!addcommand !usefulmessage Reminder that subscribing is not necessary to support the streamer!`
     * *Example:* `!addcommand !superspam -cd=30 SPAM SPAM Kappa SPAM`

@@ -13,6 +13,7 @@ import (
 type addCommand struct {
 	cp         *CommandPool
 	plebComm   *subCommand
+	subComm    *subCommand
 	modComm    *subCommand
 	deleteComm *subCommand
 }
@@ -21,13 +22,19 @@ func (T *addCommand) Init() {
 	T.plebComm = &subCommand{
 		command:   "!addcommand",
 		numArgs:   1,
-		cooldown:  1 * time.Second,
+		cooldown:  5 * time.Second,
+		clearance: channel.MOD,
+	}
+	T.subComm = &subCommand{
+		command:   "!addsubcommand",
+		numArgs:   1,
+		cooldown:  5 * time.Second,
 		clearance: channel.MOD,
 	}
 	T.modComm = &subCommand{
 		command:   "!addmodcommand",
 		numArgs:   1,
-		cooldown:  1 * time.Second,
+		cooldown:  5 * time.Second,
 		clearance: channel.MOD,
 	}
 	T.deleteComm = &subCommand{
@@ -52,8 +59,7 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		return
 	}
 
-	args, err := T.deleteComm.parse(message, clearance)
-	if err == nil {
+	if args, err := T.deleteComm.parse(message, clearance); err == nil {
 		command := strings.ToLower(args[0])
 		for i, c := range T.cp.commands {
 			if c.command == command {
@@ -65,22 +71,32 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		}
 	}
 
+	var args []string
 	var comm *textCommand
 	comm = &textCommand{
 		cp:       T.cp,
 		cooldown: defaultCooldown,
 	}
 
-	args, err = T.plebComm.parse(message, clearance)
-	if err == nil && len(args) > 1 {
+	a, err := T.plebComm.parse(message, clearance)
+	if err == nil && len(a) > 1 {
+		args = a
 		comm.clearance = channel.VIEWER
 		comm.command = strings.ToLower(args[0])
-	} else {
-		args, err = T.modComm.parse(message, clearance)
-		if err == nil && len(args) > 1 {
-			comm.clearance = channel.MOD
-			comm.command = strings.ToLower(args[0])
-		}
+	}
+
+	a, err = T.subComm.parse(message, clearance)
+	if err == nil && len(a) > 1 {
+		args = a
+		comm.clearance = channel.SUBSCRIBER
+		comm.command = strings.ToLower(args[0])
+	}
+
+	a, err = T.modComm.parse(message, clearance)
+	if err == nil && len(a) > 1 {
+		args = a
+		comm.clearance = channel.MOD
+		comm.command = strings.ToLower(args[0])
 	}
 
 	if args == nil || len(args) <= 1 {
