@@ -14,10 +14,6 @@ type DB interface {
 	GetChannelProperties(channel string) (map[string]string, error)
 	SetChannelProperty(channel, k, v string) error
 
-	GetChannelEmotes(channel string) ([]string, error)
-	AddChannelEmote(channel, emote string) error
-	DeleteChannelEmote(channel, emote string) error
-
 	GetCommands(channel string) (map[string]bool, error)
 	AddCommand(channel, command string) error
 	DeleteCommand(channel, command string) error
