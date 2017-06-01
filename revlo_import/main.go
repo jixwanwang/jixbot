@@ -50,7 +50,7 @@ func main() {
 		points, _ := strconv.Atoi(pieces[2])
 
 		user := viewerList.AddViewer(username)
-		user.AddMoney(points)
+		user.AddMoney(points - user.GetMoney())
 	}
 
 	viewerList.Flush()
