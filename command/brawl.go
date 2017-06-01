@@ -100,25 +100,25 @@ func (T *brawl) endBrawl() {
 		return
 	}
 
-	// if len(users) == 1 {
-	// 	T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was boring.", users[0]))
-	// 	// refund bet
-	// 	user, in := T.cp.channel.InChannel(users[0])
-	// 	if in {
-	// 		user.AddMoney(T.betters[users[0]])
-	// 	}
-	// 	return
-	// } else if len(users) < 5 {
-	// 	T.cp.Say(fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
-	// 	// refund bets
-	// 	for _, u := range users {
-	// 		user, in := T.cp.channel.InChannel(u)
-	// 		if in {
-	// 			user.AddMoney(T.betters[u])
-	// 		}
-	// 	}
-	// 	return
-	// }
+	if len(users) == 1 {
+		T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was boring.", users[0]))
+		// refund bet
+		user, in := T.cp.channel.InChannel(users[0])
+		if in {
+			user.AddMoney(T.betters[users[0]])
+		}
+		return
+	} else if len(users) < 5 {
+		T.cp.Say(fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
+		// refund bets
+		for _, u := range users {
+			user, in := T.cp.channel.InChannel(u)
+			if in {
+				user.AddMoney(T.betters[u])
+			}
+		}
+		return
+	}
 
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
