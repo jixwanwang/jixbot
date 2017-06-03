@@ -101,7 +101,7 @@ func (T *brawl) endBrawl() {
 	}
 
 	if len(users) == 1 {
-		T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was a boring brawl.", users[0]))
+		T.cp.Say(fmt.Sprintf("The brawl is over, but %s was the only one fighting. That was boring.", users[0]))
 		// refund bet
 		user, in := T.cp.channel.InChannel(users[0])
 		if in {
@@ -136,10 +136,10 @@ func (T *brawl) endBrawl() {
 
 	if len(weapon) > 0 {
 		var message string
-		message = fmt.Sprintf("The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They take %v %ss from the betting pool.", winner, weapon, winnings, T.cp.channel.Currency)
+		message = fmt.Sprintf(T.cp.channel.BrawlEndMessageWithWeapon, winner, weapon, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	} else {
-		message := fmt.Sprintf("The brawl is over, the tavern is a mess, but @%s is the last one standing! They take %v %ss from the betting pool.", winner, winnings, T.cp.channel.Currency)
+		message := fmt.Sprintf(T.cp.channel.BrawlEndMessageNoWeapon, winner, winnings, T.cp.channel.Currency)
 		T.cp.Say(message)
 	}
 
@@ -167,7 +167,7 @@ func (T *brawl) startBrawl() {
 		T.endBrawl()
 	}()
 
-	T.cp.Say(fmt.Sprintf("PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. Add 'bet=<amount>' to your !pileon to throw some money into the mix! Everyone, get in here! PogChamp"))
+	T.cp.Say(T.cp.channel.BrawlStartMessage)
 }
 
 func (T *brawl) Response(username, message string, whisper bool) {

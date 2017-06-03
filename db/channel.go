@@ -46,32 +46,3 @@ func (B *dbImpl) SetChannelProperty(channel, k, v string) error {
 		channel, k, v)
 	return err
 }
-
-func (B *dbImpl) GetChannelEmotes(channel string) ([]string, error) {
-	rows, err := B.db.Query("SELECT emote FROM emotes WHERE channel=$1", channel)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	emotes := []string{}
-	for rows.Next() {
-		var emote string
-		err := rows.Scan(&emote)
-		if err == nil {
-			emotes = append(emotes, emote)
-		}
-	}
-
-	return emotes, nil
-}
-
-func (B *dbImpl) AddChannelEmote(channel, emote string) error {
-	_, err := B.db.Exec("INSERT INTO emotes (channel, emote) VALUES ($1, $2)", channel, emote)
-	return err
-}
-
-func (B *dbImpl) DeleteChannelEmote(channel, emote string) error {
-	_, err := B.db.Exec("DELETE FROM emotes WHERE channel=$1 AND emote=$2", channel, emote)
-	return err
-}
