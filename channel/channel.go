@@ -24,6 +24,7 @@ type Channel struct {
 	LineTypedReward  int
 	MinuteSpentAward int
 
+	MinBrawlers               int
 	BrawlStartMessage         string
 	BrawlEndMessageNoWeapon   string
 	BrawlEndMessageWithWeapon string
@@ -42,6 +43,7 @@ func New(channel string, db db.DB) *Channel {
 	}
 
 	properties, err := db.GetChannelProperties(channel)
+	c.MinBrawlers = 5
 	c.BrawlStartMessage = "PogChamp A brawl has started in Twitch Chat! Type !pileon <optional weapon> to join the fight. Add 'bet=<amount>' to your !pileon to throw some money into the mix! Everyone, get in here! PogChamp"
 	c.BrawlEndMessageNoWeapon = `The brawl is over, the tavern is a mess, but @%s is the last one standing! They take %v %ss from the betting pool.`
 	c.BrawlEndMessageWithWeapon = `The brawl is over, the tavern is a mess! @%s has defeated everyone with their %s ! They take %v %ss from the betting pool.`
@@ -110,6 +112,8 @@ func (V *Channel) SetProperty(k, v string) {
 		V.LineTypedReward, _ = strconv.Atoi(v)
 	} else if k == "minute_spent_reward" {
 		V.MinuteSpentAward, _ = strconv.Atoi(v)
+	} else if k == "min_brawlers" {
+		V.MinBrawlers, _ = strconv.Atoi(v)
 	} else if k == "brawl_start_message" {
 		V.BrawlStartMessage = v
 	} else if k == "brawl_end_message_no_weapon" {
@@ -132,6 +136,7 @@ func (V *Channel) GetProperties() map[string]interface{} {
 		"combo_trigger":                 V.ComboTrigger,
 		"line_typed_reward":             V.LineTypedReward,
 		"minute_spent_reward":           V.MinuteSpentAward,
+		"min_brawlers":                  V.MinBrawlers,
 		"brawl_start_message":           V.BrawlStartMessage,
 		"brawl_end_message_no_weapon":   V.BrawlEndMessageNoWeapon,
 		"brawl_end_message_with_weapon": V.BrawlEndMessageWithWeapon,
