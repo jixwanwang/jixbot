@@ -108,7 +108,7 @@ func (T *brawl) endBrawl() {
 			user.AddMoney(T.betters[users[0]])
 		}
 		return
-	} else if len(users) < 3 {
+	} else if len(users) < T.cp.channel.MinBrawlers {
 		T.cp.Say(fmt.Sprintf("Only a few people joined the brawl, while others just sat around and watched. That was really boring."))
 		// refund bets
 		for _, u := range users {
