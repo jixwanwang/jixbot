@@ -74,6 +74,12 @@ func (T *textCommand) Init() {
 }
 
 func (T *textCommand) ValidateArguments() bool {
+	// Don't allow commands that let the user choose a prefix
+	// IE "!badcomm $0$ this command is bad" could become "!badcomm /ban someinnocentguy this command is bad"
+	if strings.Index(T.response, "$0$") == 0 {
+		return false
+	}
+	
 	regex, err := regexp.Compile(`\$[0-9u]\$`)
 	if err != nil {
 		log.Fatalf("regex isn't supposed to error: %v", err)
