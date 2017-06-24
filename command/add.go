@@ -114,7 +114,7 @@ func (T *addCommand) Response(username, message string, whisper bool) {
 		}
 	}
 
-	comm.response = response
+	comm.response = strings.TrimSpace(response)
 	if !comm.ValidateArguments() {
 		T.cp.Say(fmt.Sprintf("@%s arguments malformed, must start at $0$ and be consecutive", username))
 		return
