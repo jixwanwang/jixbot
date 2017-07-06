@@ -53,5 +53,9 @@ func (T *emotes) Response(username, message string, whisper bool) {
 	}
 
 	adjective := adjectives[rand.Intn(len(adjectives))]
-	T.cp.FancySay(fmt.Sprintf("Subscribe to get access to these %s emotes: %s", adjective, strings.Join(T.cp.channel.Emotes, " ")))
+	if T.cp.channel.BotIsSubbed {
+		T.cp.Say(fmt.Sprintf("Subscribe to get access to these %s emotes: %s", adjective, strings.Join(T.cp.channel.Emotes, " ")))
+	} else {
+		T.cp.Say(fmt.Sprintf("Subscribe to get access to these %s emotes: %s", adjective, strings.Join(T.cp.channel.Emotes, " ")))
+	}
 }
