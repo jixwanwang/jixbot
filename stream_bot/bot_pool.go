@@ -63,7 +63,15 @@ func (B *BotPool) AddBot(channel string) {
 	chatServer := twitch_api.GetIRCServer(channel, "irc.chat.twitch.tv:80")
 
 	client := irc.New(chatServer, channel, config.OauthToken, config.Nickname, 10)
-	fancyClient := irc.New(chatServer, channel, config.FancyOauthToken, config.FancyNickname, 3)
+
+	props, err := B.db.GetChannelProperties(channel)
+
+	var fancyClient *irc.Client
+	if err == nil && props["fancy_name"] != "" && props["fancy_oauth"] != "" {
+		fancyClient = irc.New(chatServer, channel, props["fancy_oauth"], props["fancy_name"], 3)
+	} else {
+		fancyClient = irc.New(chatServer, channel, config.FancyOauthToken, config.FancyNickname, 3)
+	}
 
 	chat := irc.NewTwitchChat(channel, client, fancyClient, B.whisperClient)
 

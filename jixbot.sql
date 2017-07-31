@@ -20,7 +20,7 @@ drop table if exists emotes;
 create table emotes (id serial primary key, channel text, emote text);
 
 drop table if exists textcommands;
-create table textcommands (id serial primary key, channel text, command text, message text, clearance int);
+create table textcommands (id serial primary key, channel text, command text, message text, clearance int, cooldown int);
 
 drop table if exists commands;
 create table commands (id serial primary key, channel text, command text);
