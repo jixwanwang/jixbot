@@ -29,6 +29,9 @@ type Channel struct {
 	BrawlEndMessageNoWeapon   string
 	BrawlEndMessageWithWeapon string
 
+	FancyName  string
+	FancyOauth string
+
 	Emotes []string
 
 	db db.DB
@@ -120,6 +123,10 @@ func (V *Channel) SetProperty(k, v string) {
 		V.BrawlEndMessageNoWeapon = v
 	} else if k == "brawl_end_message_with_weapon" {
 		V.BrawlEndMessageWithWeapon = v
+	} else if k == "fancy_name" {
+		V.FancyName = v
+	} else if k == "fancy_oauth" {
+		V.FancyOauth = v
 	} else {
 		valid = false
 	}
@@ -140,6 +147,8 @@ func (V *Channel) GetProperties() map[string]interface{} {
 		"brawl_start_message":           V.BrawlStartMessage,
 		"brawl_end_message_no_weapon":   V.BrawlEndMessageNoWeapon,
 		"brawl_end_message_with_weapon": V.BrawlEndMessageWithWeapon,
+		"fancy_name":                    V.FancyName,
+		"fancy_oauth":                   V.FancyOauth,
 	}
 }
 
