@@ -77,7 +77,7 @@ func (T *money) Response(username, message string, whisper bool) {
 		}
 
 		viewer, _ := T.cp.channel.InChannel(username)
-		if clearance != channel.GOD {
+		if clearance != channel.GOD && clearance != channel.BROADCASTER {
 			if viewer.GetMoney() < amount {
 				T.cp.Whisper(username, fmt.Sprintf("You don't have enough %ss", T.cp.channel.Currency))
 				return
