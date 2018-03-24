@@ -57,6 +57,14 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		} else {
 			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", name, months, emotes))
 		}
+	} else if strings.Index(msg, "gifted a") > 0 {
+		name := msg[:strings.Index(msg, " ")]
+		targetName := msg[strings.LastIndex(msg, " ")+1:]
+		if T.cp.channel.BotIsSubbed {
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for gifting a sub %s, welcome to the %s, %s %s", name, T.cp.channel.SubName, targetName, emotes))
+		} else {
+			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for gifting a sub %s, welcome to the %s, %s %s", name, T.cp.channel.SubName, targetName, emotes))
+		}
 	} else if strings.Index(msg, "just subscribed") > 0 || strings.Index(msg, "twitch prime") > 0 {
 		name := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
