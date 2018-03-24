@@ -38,7 +38,11 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		months, _ := strconv.Atoi(sub[:strings.Index(sub, " ")])
 		if months == 0 {
 			emotes := strings.Join(T.cp.channel.Emotes, " ")
-			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", name, emotes))
+			if T.cp.channel.BotIsSubbed {
+				T.cp.Say(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", name, emotes))
+			} else {
+				T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", name, emotes))
+			}
 			return
 		}
 
@@ -48,10 +52,18 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 			emotes = emotes + emote + " "
 		}
 
-		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", name, months, emotes))
+		if T.cp.channel.BotIsSubbed {
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", name, months, emotes))
+		} else {
+			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", name, months, emotes))
+		}
 	} else if strings.Index(msg, "just subscribed") > 0 || strings.Index(msg, "twitch prime") > 0 {
 		name := msg[:strings.Index(msg, " ")]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
-		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", name, T.cp.channel.SubName, emotes))
+		if T.cp.channel.BotIsSubbed {
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", name, T.cp.channel.SubName, emotes))
+		} else {
+			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", name, T.cp.channel.SubName, emotes))
+		}
 	}
 }
