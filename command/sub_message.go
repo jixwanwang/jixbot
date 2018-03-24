@@ -31,33 +31,27 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 
 	msg := strings.ToLower(message)
 
-	if strings.Index(msg, "just subscribed!") > 0 || strings.Index(msg, "twitch prime") > 0 {
-		sub := msg[:strings.Index(msg, " ")]
-		emotes := strings.Join(T.cp.channel.Emotes, " ")
-		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
-	} else if strings.Index(msg, "subscribed for ") > 0 {
-		sub := msg[:strings.Index(msg, " ")]
-		msg = msg[strings.Index(msg, " ")+1:]
-		msg = strings.TrimPrefix(msg, "subscribed for ")
-		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
-		monthIndex := strings.Index(msg, " months in a row!")
-		if monthIndex == -1 {
-			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing for 1 month! %s", sub, emote))
-			return
-		}
-
-		months, err := strconv.Atoi(msg[:monthIndex])
-		if err != nil {
+	if index := strings.Index(msg, "subscribed for "); index > 0 {
+		name := msg[:strings.Index(msg, " ")]
+		sub := msg[index:]
+		sub = strings.TrimPrefix(sub, "subscribed for ")
+		months, _ := strconv.Atoi(sub[:strings.Index(sub, " ")])
+		if months == 0 {
 			emotes := strings.Join(T.cp.channel.Emotes, " ")
-			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", sub, emotes))
+			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing! %s", name, emotes))
 			return
 		}
 
+		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
 		emotes := ""
 		for i := 0; i < months; i++ {
 			emotes = emotes + emote + " "
 		}
 
-		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", sub, months, emotes))
+		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for re-subscribing, for %v months! %s", name, months, emotes))
+	} else if strings.Index(msg, "just subscribed") > 0 || strings.Index(msg, "twitch prime") > 0 {
+		name := msg[:strings.Index(msg, " ")]
+		emotes := strings.Join(T.cp.channel.Emotes, " ")
+		T.cp.FancySay(fmt.Sprintf("@%s, Thank you for subscribing, welcome to the %s! %s", sub, T.cp.channel.SubName, emotes))
 	}
 }
