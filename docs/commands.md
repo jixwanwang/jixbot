@@ -25,6 +25,9 @@ Management
   * Can use `$url: <url>$` to substitute an api call's response. The above substitutions are applied to the url
     * *Example:* `!addcommand !url $url: http://www.dummyapi.com/text/$0$ $`
     * *Example:* `!url hello -> the text passed into the api was "hello"`
+  * Can use `$rand:<min>-<max>$` to substitute a random number in the response
+    * *Example:* `!addcommand !rollthedice $u$ rolled a $rand:1-6$`
+    * *Example:* `!rollthedice -> jix rolled a 6
 * **delete** (*M*)
   * `!deletecommand !<name>` - Deletes a text command
 * **modonly** (*M*)

@@ -185,17 +185,18 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 			response = strings.Replace(response, match, apiResponse, -1)
 		}
 
-		log.Printf(response)
 		randMatches := T.randRegex.FindAllString(response, -1)
 		for _, match := range randMatches {
 			randRange := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "rand:"))
 			lower, _ := strconv.Atoi(randRange[:strings.Index(randRange, "-")])
 			upper, _ := strconv.Atoi(randRange[strings.Index(randRange, "-")+1:])
-			if upper-lower == 0 {
-				break
+			if upper-lower < 0 {
+				response = strings.Replace(response, match, "", -1)
+				continue
 			}
 
-			random := rand.Intn(upper-lower) + lower
+			// make upper inclusive
+			random := rand.Intn(upper-lower+1) + lower
 			response = strings.Replace(response, match, strconv.Itoa(random), -1)
 		}
 
