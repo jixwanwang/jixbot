@@ -136,8 +136,10 @@ func (B *Bot) Start() {
 			// Sub notification
 			case "USERNOTICE":
 				username := fromToUsername(e.From)
+				log.Printf("%v", username, e.Tags)
 				if username == "tmi.twitch.tv" {
 					B.processMessage(username, strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
+					log.Printf("%v", strings.Replace(e.Tags["system-msg"], `\s`, " ", -1))
 				}
 			default: //ignore
 			}
