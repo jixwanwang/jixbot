@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -34,7 +35,8 @@ type textCommand struct {
 
 	isFancy bool
 
-	urlRegex *regexp.Regexp
+	urlRegex  *regexp.Regexp
+	randRegex *regexp.Regexp
 }
 
 func (T *textCommand) Init() {
@@ -46,6 +48,12 @@ func (T *textCommand) Init() {
 	}
 
 	T.urlRegex = urlRegex
+
+	randRegex, err := regexp.Compile(`\$rand:[0-9]+-[0-9]+\$`)
+	if err != nil {
+		log.Printf("rand regex parse: %v", err)
+	}
+	T.randRegex = randRegex
 
 	if T.numArgs > 0 {
 		T.comm = &subCommand{
@@ -175,6 +183,20 @@ func (T *textCommand) Response(username, message string, whisper bool) {
 			}
 
 			response = strings.Replace(response, match, apiResponse, -1)
+		}
+
+		log.Printf(response)
+		randMatches := T.randRegex.FindAllString(response, -1)
+		for _, match := range randMatches {
+			randRange := strings.TrimSpace(strings.TrimPrefix(match[1:len(match)-1], "rand:"))
+			lower, _ := strconv.Atoi(randRange[:strings.Index(randRange, "-")])
+			upper, _ := strconv.Atoi(randRange[strings.Index(randRange, "-")+1:])
+			if upper-lower == 0 {
+				break
+			}
+
+			random := rand.Intn(upper-lower) + lower
+			response = strings.Replace(response, match, strconv.Itoa(random), -1)
 		}
 
 		if T.isFancy {
