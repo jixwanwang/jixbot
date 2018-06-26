@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -42,12 +41,11 @@ func (T *soundEffect) Response(username, message string, whisper bool) {
 
 	args, err := T.queue.parse(message, clearance)
 	if err == nil {
-		twitch_api.QueueSoundEffect(args[0])
-		log.Printf("%s", args[0])
 		if viewer.GetMoney() < 1000 {
 			T.cp.Say(fmt.Sprintf("You need 1000 %ss to buy a sound effect", T.cp.channel.Currency))
 			return
 		}
+		twitch_api.QueueSoundEffect(args[0])
 		viewer.AddMoney(-1000)
 	}
 }
