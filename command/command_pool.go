@@ -141,6 +141,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&quotes{
 			cp: C,
 		},
+		&soundEffect{
+			cp: C,
+		},
 	}
 }
 

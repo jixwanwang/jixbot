@@ -2,9 +2,11 @@ package twitch_api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -115,4 +117,9 @@ func LiveStream(channel string) *KrakenStream {
 	err = dec.Decode(&s)
 
 	return &s
+}
+
+func QueueSoundEffect(name string) {
+	log.Printf("%s/enqueue/%s/%s", os.Getenv("SOUND_EFFECT_URL"), name, os.Getenv("SOUND_EFFECT_TOKEN"))
+	makeRequest("GET", fmt.Sprintf("%s/enqueue/%s/%s", os.Getenv("SOUND_EFFECT_URL"), name, os.Getenv("SOUND_EFFECT_TOKEN")))
 }
