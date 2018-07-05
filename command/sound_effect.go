@@ -41,11 +41,11 @@ func (T *soundEffect) Response(username, message string, whisper bool) {
 
 	args, err := T.queue.parse(message, clearance)
 	if err == nil {
-		if viewer.GetMoney() < 1000 {
-			T.cp.Say(fmt.Sprintf("You need 1000 %ss to buy a sound effect", T.cp.channel.Currency))
+		if viewer.GetMoney() < 5000 {
+			T.cp.Say(fmt.Sprintf("You need 5000 %ss to buy a sound effect", T.cp.channel.Currency))
 			return
 		}
+		viewer.AddMoney(-5000)
 		twitch_api.QueueSoundEffect(args[0])
-		viewer.AddMoney(-1000)
 	}
 }
