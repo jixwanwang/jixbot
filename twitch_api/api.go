@@ -123,3 +123,16 @@ func QueueSoundEffect(name string) {
 	log.Printf("%s/enqueue/%s/%s", os.Getenv("SOUND_EFFECT_URL"), name, os.Getenv("SOUND_EFFECT_TOKEN"))
 	makeRequest("GET", fmt.Sprintf("%s/enqueue/%s/%s", os.Getenv("SOUND_EFFECT_URL"), name, os.Getenv("SOUND_EFFECT_TOKEN")))
 }
+
+func ListSoundEffects() []string {
+	resp, err := makeRequest("GET", fmt.Sprintf("%s/tracks/%s", os.Getenv("SOUND_EFFECT_URL"), os.Getenv("SOUND_EFFECT_TOKEN")))
+	if err != nil {
+		return []string{}
+	}
+
+	var sounds []string
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&sounds)
+
+	return sounds
+}

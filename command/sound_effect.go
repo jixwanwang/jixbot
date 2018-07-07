@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jixwanwang/jixbot/channel"
@@ -12,6 +13,7 @@ type soundEffect struct {
 	cp *CommandPool
 
 	queue *subCommand
+	list  *subCommand
 }
 
 func (T *soundEffect) Init() {
@@ -19,6 +21,13 @@ func (T *soundEffect) Init() {
 		command:   "!jukebox",
 		numArgs:   1,
 		cooldown:  5 * time.Second,
+		clearance: channel.VIEWER,
+	}
+
+	T.list = &subCommand{
+		command:   "!soundlist",
+		numArgs:   0,
+		cooldown:  15 * time.Second,
 		clearance: channel.VIEWER,
 	}
 }
@@ -47,5 +56,12 @@ func (T *soundEffect) Response(username, message string, whisper bool) {
 		}
 		viewer.AddMoney(-5000)
 		twitch_api.QueueSoundEffect(args[0])
+	}
+
+	_, err = T.list.parse(message, clearance)
+	if err == nil {
+		sounds := twitch_api.ListSoundEffects()
+		T.cp.Say(fmt.Sprintf("List of sound effects %s", strings.Join(sounds, "\n")))
+		return
 	}
 }
