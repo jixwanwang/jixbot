@@ -51,7 +51,7 @@ func (T *soundEffect) Response(username, message string, whisper bool) {
 	args, err := T.queue.parse(message, clearance)
 	if err == nil {
 		if viewer.GetMoney() < 2500 {
-			T.cp.Say(fmt.Sprintf("You need 5000 %ss to buy a sound effect", T.cp.channel.Currency))
+			T.cp.Say(fmt.Sprintf("You need 2500 %ss to buy a sound effect", T.cp.channel.Currency))
 			return
 		}
 		viewer.AddMoney(-2500)
