@@ -10,7 +10,7 @@ import (
 	"github.com/jixwanwang/jixbot/channel"
 )
 
-const ENTRY_AMOUNT = 100
+const entryAmount = 1
 
 type lottery struct {
 	cp        *CommandPool
@@ -77,7 +77,7 @@ func (T *lottery) endlottery() {
 		for k, v := range T.entries {
 			user, in := T.cp.channel.InChannel(k)
 			if in {
-				user.AddMoney(ENTRY_AMOUNT * v)
+				user.AddMoney(entryAmount * v)
 			}
 		}
 		return
@@ -118,29 +118,26 @@ func (T *lottery) Response(username, message string, whisper bool) {
 	}
 
 	args, err := T.enterComm.parse(message, clearance)
-	if err == nil && T.active == true {
+	if err == nil && T.active {
 		user, in := T.cp.channel.InChannel(username)
 		if !in {
 			return
 		}
 
 		tickets := 1
-
 		if len(args) > 0 {
-			tickets, _ := strconv.Atoi(args[0])
+			tickets, _ = strconv.Atoi(strings.TrimSpace(args[0]))
 			if tickets <= 0 {
 				tickets = 1
 			}
 		}
 
-		fmt.Printf("%s entered the lottery with %d tickets", username, tickets)
-
-		if user.GetMoney() < tickets*ENTRY_AMOUNT {
-			T.cp.Whisper(username, fmt.Sprintf("You don't have enough money to purchase %d tickets. You can purchase up to %d tickets with your money", tickets, user.GetMoney()/ENTRY_AMOUNT))
+		if user.GetMoney() < tickets*entryAmount {
+			T.cp.Whisper(username, fmt.Sprintf("You don't have enough money to purchase %d tickets. You can purchase up to %d tickets with your money", tickets, user.GetMoney()/entryAmount))
 			return
 		}
 
-		user.AddMoney(-tickets * ENTRY_AMOUNT)
+		user.AddMoney(-tickets * entryAmount)
 
 		if val, ok := T.entries[username]; ok {
 			T.entries[username] = val + tickets
@@ -148,7 +145,7 @@ func (T *lottery) Response(username, message string, whisper bool) {
 			T.entries[username] = tickets
 		}
 
-		T.cp.Whisper(username, fmt.Sprintf("You have purchased %d tickets costing %d %ss", tickets, tickets*ENTRY_AMOUNT, T.cp.channel.Currency))
+		T.cp.Whisper(username, fmt.Sprintf("You have purchased %d tickets costing %d %ss", tickets, tickets*entryAmount, T.cp.channel.Currency))
 
 		return
 	}
