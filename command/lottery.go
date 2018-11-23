@@ -35,7 +35,7 @@ func (T *lottery) Init() {
 	T.startComm = &subCommand{
 		command:   "!lottery",
 		numArgs:   0,
-		cooldown:  5 * time.Minute,
+		cooldown:  5 * time.Second,
 		clearance: channel.BROADCASTER,
 	}
 
@@ -127,11 +127,13 @@ func (T *lottery) Response(username, message string, whisper bool) {
 		tickets := 1
 
 		if len(args) > 0 {
-			tickets := strconv.Atoi(args[0])
+			tickets, _ := strconv.Atoi(args[0])
 			if tickets <= 0 {
 				tickets = 1
 			}
 		}
+
+		fmt.Printf("%s entered the lottery with %d tickets", username, tickets)
 
 		if user.GetMoney() < tickets*ENTRY_AMOUNT {
 			T.cp.Whisper(username, fmt.Sprintf("You don't have enough money to purchase %d tickets. You can purchase up to %d tickets with your money", tickets, user.GetMoney()/ENTRY_AMOUNT))
@@ -140,11 +142,13 @@ func (T *lottery) Response(username, message string, whisper bool) {
 
 		user.AddMoney(-tickets * ENTRY_AMOUNT)
 
-		if val, ok := entries[username]; ok {
-			entries[user] = val + tickets
+		if val, ok := T.entries[username]; ok {
+			T.entries[user] = val + tickets
 		} else {
-			entries[username] = tickets
+			T.entries[username] = tickets
 		}
+
+		T.cp.Whisper(username, fmt.Sprintf("You have purchased %d tickets costing %d %ss", tickets, tickets*ENTRY_AMOUNT, T.cp.channel.Currency))
 
 		return
 	}
