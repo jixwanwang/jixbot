@@ -18,13 +18,6 @@ type lottery struct {
 	endComm   *subCommand
 	enterComm *subCommand
 
-	lotteryComm   *subCommand
-	seasonComm    *subCommand
-	newSeasonComm *subCommand
-	pileComm      *subCommand
-	statsComm     *subCommand
-	statComm      *subCommand
-
 	entries map[string]int
 	active  bool
 }
@@ -95,6 +88,15 @@ func (T *lottery) startlottery() {
 	T.active = true
 
 	T.cp.Say(fmt.Sprintf("Hey everyone! @%s has started a lottery. Use !enter <# of tickets> to enter the lottery for your chance to win! Each ticket costs %d %ss", T.cp.channel.GetChannelName(), entryAmount, T.cp.channel.Currency))
+
+	duration := 300
+	timer := time.NewTimer(time.Duration(duration) * time.Second)
+
+	go func() {
+		<-timer.C
+
+		T.endlottery()
+	}()
 }
 
 func (T *lottery) Response(username, message string, whisper bool) {
