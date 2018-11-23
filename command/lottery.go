@@ -52,6 +52,10 @@ func (T *lottery) ID() string {
 }
 
 func (T *lottery) endlottery() {
+	if !T.active {
+		return
+	}
+
 	T.active = false
 
 	users := []string{}
