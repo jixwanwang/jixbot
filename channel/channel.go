@@ -160,14 +160,22 @@ func (V *Channel) RecordMessage(username, msg string) {
 
 	if V.Broadcaster.Online {
 		v.AddLineTyped()
-		v.AddMoney(V.LineTypedReward)
+		if V.ViewerList.GetLevel(username) >= SUBSCRIBER {
+			v.AddMoney(V.LineTypedReward * 2)
+		} else {
+			v.AddMoney(V.LineTypedReward)
+		}
 	}
 }
 
 func (V *Channel) AddTime(minutes int) {
 	for _, v := range V.ViewerList.viewers {
 		v.AddTimeSpent(minutes)
-		v.AddMoney(V.MinuteSpentAward * minutes)
+		if V.ViewerList.GetLevel(v.Username) >= SUBSCRIBER {
+			v.AddMoney(V.MinuteSpentAward * minutes * 2)
+		} else {
+			v.AddMoney(V.MinuteSpentAward * minutes)
+		}
 	}
 }
 
