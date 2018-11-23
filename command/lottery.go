@@ -86,7 +86,7 @@ func (T *lottery) endlottery() {
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
 
-	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp", winner))
+	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. ", winner, entries[winner]))
 
 	T.entries = map[string]int{}
 }
