@@ -36,7 +36,7 @@ func makeRequest(method, url string) (*http.Response, error) {
 }
 
 func GetEmotes(channel string) []string {
-	resp, err := makeRequest("GET", "http://api.twitch.tv/kraken/chat/"+channel+"/emoticons?on_site=1")
+	resp, err := makeRequest("GET", "https://api.twitch.tv/kraken/chat/"+channel+"/emoticons?on_site=1")
 	if err != nil {
 		return []string{}
 	}

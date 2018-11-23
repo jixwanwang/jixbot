@@ -46,7 +46,10 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 			return
 		}
 
-		emote := T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
+		emote := "PogChamp"
+		if len(T.cp.channel.Emotes) > 0 {
+			emote = T.cp.channel.Emotes[rand.Intn(len(T.cp.channel.Emotes))]
+		}
 		emotes := ""
 		for i := 0; i < months; i++ {
 			emotes = emotes + emote + " "
