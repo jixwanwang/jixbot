@@ -94,7 +94,7 @@ func (T *lottery) endlottery() {
 func (T *lottery) startlottery() {
 	T.active = true
 
-	T.cp.Say(fmt.Sprintf("Hey everyone! @%s has started a lottery. Use !enter <# of tickets> to enter the lottery for your chance to win! Each ticket costs 100 %ss", T.cp.channel.GetChannelName(), T.cp.channel.Currency))
+	T.cp.Say(fmt.Sprintf("Hey everyone! @%s has started a lottery. Use !enter <# of tickets> to enter the lottery for your chance to win! Each ticket costs %d %ss", T.cp.channel.GetChannelName(), entryAmount, T.cp.channel.Currency))
 }
 
 func (T *lottery) Response(username, message string, whisper bool) {
