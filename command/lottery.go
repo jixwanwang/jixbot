@@ -143,7 +143,7 @@ func (T *lottery) Response(username, message string, whisper bool) {
 		user.AddMoney(-tickets * ENTRY_AMOUNT)
 
 		if val, ok := T.entries[username]; ok {
-			T.entries[user] = val + tickets
+			T.entries[username] = val + tickets
 		} else {
 			T.entries[username] = tickets
 		}
