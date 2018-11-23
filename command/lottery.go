@@ -117,7 +117,7 @@ func (T *lottery) Response(username, message string, whisper bool) {
 		return
 	}
 
-	args, err := T.pileComm.parse(message, clearance)
+	args, err := T.enterComm.parse(message, clearance)
 	if err == nil && T.active == true {
 		user, in := T.cp.channel.InChannel(username)
 		if !in {
