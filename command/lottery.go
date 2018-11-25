@@ -1,8 +1,8 @@
 package command
 
 import (
-	"math"
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -101,10 +101,8 @@ func (T *lottery) endlottery() {
 		return
 	}
 
-
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
-
 
 	sorted := sortedEntries{
 		entries:   T.entries,
@@ -113,10 +111,10 @@ func (T *lottery) endlottery() {
 
 	sort.Sort(sorted)
 
-	topPurchasers := []
+	topPurchasers := []string{}
 	for i := 0; i < math.Min(len(entrants), 5); i++ {
 		username := sorted.usernames[i]
-		topPurchasers = append(topPurchasers, fmt.Sprintf("%s - %d tickets",  username, T.entries[username])
+		topPurchasers = append(topPurchasers, fmt.Sprintf("%s - %d tickets", username, T.entries[username]))
 	}
 
 	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. The top purchasers of this lottery were: %s", winner, T.entries[winner], strings.Join(topPurchasers, ",")))
