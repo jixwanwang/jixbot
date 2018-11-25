@@ -66,7 +66,7 @@ func (s *sortedEntries) Swap(i, j int) {
 	s.usernames[i], s.usernames[j] = s.usernames[j], s.usernames[i]
 }
 
-func (s *sortedEntries) Less(i, j int) {
+func (s *sortedEntries) Less(i, j int) bool {
 	return s.entries[s.usernames[i]] > s.entries[s.usernames[j]]
 }
 
@@ -104,7 +104,7 @@ func (T *lottery) endlottery() {
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
 
-	sorted := sortedEntries{
+	sorted := &sortedEntries{
 		entries:   T.entries,
 		usernames: entrants,
 	}
