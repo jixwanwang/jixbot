@@ -1,8 +1,10 @@
 package command
 
 import (
+	"math"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -51,6 +53,23 @@ func (T *lottery) ID() string {
 	return "lottery"
 }
 
+type sortedEntries struct {
+	entries   map[string]int
+	usernames []string
+}
+
+func (s *sortedEntries) Len() int {
+	return len(s.usernames)
+}
+
+func (s *sortedEntries) Swap(i, j int) {
+	s.usernames[i], s.usernames[j] = s.usernames[j], s.usernames[i]
+}
+
+func (s *sortedEntries) Less(i, j int) {
+	return s.entries[s.usernames[i]] > s.entries[s.usernames[j]]
+}
+
 func (T *lottery) endlottery() {
 	if !T.active {
 		return
@@ -59,12 +78,14 @@ func (T *lottery) endlottery() {
 	T.active = false
 
 	users := []string{}
+	entrants := []string{}
 
 	// add user to user array for every entry they have
 	for k, v := range T.entries {
 		for i := 0; i < v; i++ {
 			users = append(users, k)
 		}
+		entrants = append(entrants, k)
 	}
 
 	if len(T.entries) <= 1 {
@@ -80,10 +101,25 @@ func (T *lottery) endlottery() {
 		return
 	}
 
+
 	winnerIndex := rand.Intn(len(users))
 	winner := users[winnerIndex]
 
-	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. ", winner, T.entries[winner]))
+
+	sorted := sortedEntries{
+		entries:   T.entries,
+		usernames: entrants,
+	}
+
+	sort.Sort(sorted)
+
+	topPurchasers := []
+	for i := 0; i < math.Min(len(entrants), 5); i++ {
+		username := sorted.usernames[i]
+		topPurchasers = append(topPurchasers, fmt.Sprintf("%s - %d tickets",  username, T.entries[username])
+	}
+
+	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. The top purchasers of this lottery were: %s", winner, T.entries[winner], strings.Join(topPurchasers, ",")))
 
 	T.entries = map[string]int{}
 }
