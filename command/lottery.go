@@ -112,7 +112,7 @@ func (T *lottery) endlottery() {
 	sort.Sort(sorted)
 
 	topPurchasers := []string{}
-	for i := 0; i < int(math.Min(float(len(entrants)), 5)); i++ {
+	for i := 0; i < int(math.Min(float64(len(entrants)), 5)); i++ {
 		username := sorted.usernames[i]
 		topPurchasers = append(topPurchasers, fmt.Sprintf("%s - %d tickets", username, T.entries[username]))
 	}
