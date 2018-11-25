@@ -117,7 +117,7 @@ func (T *lottery) endlottery() {
 		topPurchasers = append(topPurchasers, fmt.Sprintf("%s - %d tickets", username, T.entries[username]))
 	}
 
-	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. The top purchasers of this lottery were: %s", winner, T.entries[winner], strings.Join(topPurchasers, ",")))
+	T.cp.Say(fmt.Sprintf("The winner of the lottery is %s! PogChamp They purchased %d tickets. The top purchasers of this lottery were: %s", winner, T.entries[winner], strings.Join(topPurchasers, ", ")))
 
 	T.entries = map[string]int{}
 }
