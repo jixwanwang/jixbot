@@ -35,6 +35,8 @@ type Channel struct {
 	Emotes []string
 
 	db db.DB
+
+	eventActive bool
 }
 
 func New(channel string, db db.DB) *Channel {
@@ -80,7 +82,9 @@ func New(channel string, db db.DB) *Channel {
 			if c.Broadcaster.Online {
 				c.AddTime(1)
 			}
-			c.ViewerList.Flush()
+			if !c.eventActive {
+				c.ViewerList.Flush()
+			}
 		}
 	}()
 
@@ -179,6 +183,14 @@ func (V *Channel) AddTime(minutes int) {
 	}
 }
 
+func (V *Channel) AddMoney(money int) {
+	for _, v := range V.ViewerList.viewers {
+		v.AddMoney(money)
+	}
+}
+
 func (V *Channel) Flush() {
-	V.ViewerList.Flush()
+	if !V.eventActive {
+		V.ViewerList.Flush()
+	}
 }

@@ -71,6 +71,8 @@ func (s *sortedEntries) Less(i, j int) bool {
 }
 
 func (T *lottery) endlottery() {
+	T.cp.channel.eventActive = false
+
 	if !T.active {
 		return
 	}
@@ -124,6 +126,7 @@ func (T *lottery) endlottery() {
 
 func (T *lottery) startlottery() {
 	T.active = true
+	T.cp.channel.eventActive = true
 
 	T.cp.Say(fmt.Sprintf("Hey everyone! @%s has started a lottery. Use !enter <# of tickets> to enter the lottery for your chance to win! Each ticket costs %d %ss", T.cp.channel.GetChannelName(), entryAmount, T.cp.channel.Currency))
 

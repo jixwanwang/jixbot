@@ -38,6 +38,13 @@ func (T *money) Init() {
 		cooldown:  200 * time.Millisecond,
 		clearance: channel.VIEWER,
 	}
+
+	T.giveAll = &subCommand{
+		command:   "!giveall",
+		numArgs:   1,
+		cooldown:  1 * time.Minute,
+		clearance: channel.BROADCASTER,
+	}
 }
 
 func (T *money) ID() string {
@@ -95,6 +102,14 @@ func (T *money) Response(username, message string, whisper bool) {
 	if err == nil {
 		T.cp.Whisper(username, fmt.Sprintf("You have %d %ss in %s's channel", viewer.GetMoney(), T.cp.channel.Currency, T.cp.channel.Username))
 		return
+	}
+
+	args, err = T.giveAll.parse(message, clearance)
+	if err == nil {
+		amount, _ := strconv.Atoi(args[0])
+		T.cp.channel.AddMoney(amount)
+		T.cp.channel.Flush()
+		T.cp.Say("Everyone gets %d %ss, go nuts!", amount, T.cp.channel.Currency)
 	}
 
 	return
