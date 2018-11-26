@@ -12,9 +12,10 @@ import (
 type money struct {
 	cp *CommandPool
 
-	cash  *subCommand
-	stats *subCommand
-	give  *subCommand
+	cash    *subCommand
+	stats   *subCommand
+	give    *subCommand
+	giveAll *subCommand
 }
 
 func (T *money) Init() {
@@ -109,7 +110,7 @@ func (T *money) Response(username, message string, whisper bool) {
 		amount, _ := strconv.Atoi(args[0])
 		T.cp.channel.AddMoney(amount)
 		T.cp.channel.Flush()
-		T.cp.Say("Everyone gets %d %ss, go nuts!", amount, T.cp.channel.Currency)
+		T.cp.Say(fmt.Sprintf("Everyone gets %d %ss, go nuts!", amount, T.cp.channel.Currency))
 	}
 
 	return
