@@ -60,6 +60,6 @@ func (T *conversation) Response(username, message string, whisper bool) {
 		strings.Index(message, ":d") >= 0 ||
 		strings.Index(message, "BibleThump") >= 0) && len(strings.Split(message, " ")) > 7 {
 		T.lastResponse = time.Now()
-		T.cp.Say(fmt.Sprintf(sympathy[rand.Intn(len(compliments))], username))
+		T.cp.Say(fmt.Sprintf(sympathy[rand.Intn(len(sympathy))], username))
 	}
 }
