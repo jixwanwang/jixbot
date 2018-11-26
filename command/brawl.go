@@ -89,7 +89,7 @@ func (T *brawl) ID() string {
 
 func (T *brawl) endBrawl() {
 	T.active = false
-	T.cp.channel.eventActive = false
+	T.cp.channel.EventActive = false
 
 	users := []string{}
 
@@ -158,7 +158,7 @@ func (T *brawl) endBrawl() {
 
 func (T *brawl) startBrawl() {
 	T.active = true
-	T.cp.channel.eventActive = true
+	T.cp.channel.EventActive = true
 
 	duration := rand.Intn(120) + 60
 	timer := time.NewTimer(time.Duration(duration) * time.Second)

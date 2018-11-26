@@ -31,7 +31,7 @@ func (T *combo) Response(username, message string, whisper bool) {
 
 	if T.active && time.Since(T.lastCombo).Minutes() > 3 {
 		T.active = false
-		T.cp.channel.eventActive = false
+		T.cp.channel.EventActive = false
 		T.activeCombo = ""
 	}
 	matchesCombo := false
@@ -57,7 +57,7 @@ func (T *combo) Response(username, message string, whisper bool) {
 				T.lastCombo = time.Now()
 				T.comboers[username] = true
 				T.active = true
-				T.cp.channel.eventActive = true
+				T.cp.channel.EventActive = true
 			}
 		} else if time.Since(T.lastCombo).Seconds() < 15 {
 			if _, ok := T.comboers[username]; !ok {
@@ -96,7 +96,7 @@ func (T *combo) Response(username, message string, whisper bool) {
 					}
 				}
 				T.active = false
-				T.cp.channel.eventActive = false
+				T.cp.channel.EventActive = false
 				T.activeCombo = ""
 				T.cp.Say(fmt.Sprintf("%s C-C-C-C-COMBO BREAKER (%d combo achieved!)", T.activeCombo, len(T.comboers)))
 			}

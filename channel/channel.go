@@ -36,7 +36,7 @@ type Channel struct {
 
 	db db.DB
 
-	eventActive bool
+	EventActive bool
 }
 
 func New(channel string, db db.DB) *Channel {
@@ -82,7 +82,7 @@ func New(channel string, db db.DB) *Channel {
 			if c.Broadcaster.Online {
 				c.AddTime(1)
 			}
-			if !c.eventActive {
+			if !c.EventActive {
 				c.ViewerList.Flush()
 			}
 		}
@@ -190,7 +190,7 @@ func (V *Channel) AddMoney(money int) {
 }
 
 func (V *Channel) Flush() {
-	if !V.eventActive {
+	if !V.EventActive {
 		V.ViewerList.Flush()
 	}
 }
