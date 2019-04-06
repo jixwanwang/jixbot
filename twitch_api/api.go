@@ -2,6 +2,7 @@ package twitch_api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -15,9 +16,14 @@ func SetClientID(id string) {
 	clientID = id
 }
 
-type emoticonsAPIResponse struct {
-	Emoticons []Emote `"json:emoticons"`
+type productsAPIResponse struct {
+	Plans []Plan `"json:plans"`
 }
+
+type Plan struct {
+ 	Emoticons []Emote `"json:emoticons"`
+	Price     string  `"json:price"`
+ }
 
 type Emote struct {
 	Regex          string `json:"regex`
@@ -35,14 +41,25 @@ func makeRequest(method, url string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
+func makeV5Request(method, url string) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Client-ID", clientID)
+	req.Header.Set("Accept", "application/vnd.twitchtv.v5+json")
+
+	return http.DefaultClient.Do(req)
+}
+
 func GetEmotes(channel string) []string {
-	resp, err := makeRequest("GET", "https://api.twitch.tv/kraken/chat/"+channel+"/emoticons?on_site=1")
+	resp, err := makeV5Request("GET", fmt.Sprintf("https://api.twitch.tv/api/channels/%s/product", channel))
 	if err != nil {
 		return []string{}
 	}
 	defer resp.Body.Close()
 
-	var emotes emoticonsAPIResponse
+	var emotes productsAPIResponse
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&emotes)
 	if err != nil {
@@ -51,9 +68,13 @@ func GetEmotes(channel string) []string {
 	}
 
 	subEmotes := []string{}
-	for _, e := range emotes.Emoticons {
-		if e.SubscriberOnly && strings.ToLower(e.State) == "active" {
-			subEmotes = append(subEmotes, e.Regex)
+	for _, plan := range emotes.Plans {
+		if plan.Price == "$4.99" {
+			for _, e := range plan.Emoticons {
+				if e.SubscriberOnly && strings.ToLower(e.State) == "active" {
+					subEmotes = append(subEmotes, e.Regex)
+				}
+			}
 		}
 	}
 
