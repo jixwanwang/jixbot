@@ -125,7 +125,7 @@ func (T *brawl) endBrawl() {
 	winner := users[winnerIndex]
 
 	// Default winnings for no bet
-	winnings := 500
+	winnings := 5000
 
 	// If everyone bets, the expected winnings is same as the bet, so no one makes any money.
 	// However if not everyone bets, the expected winnings is less than the bet. Gambling always causes a loss ;P
