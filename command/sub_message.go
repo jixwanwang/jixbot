@@ -65,9 +65,18 @@ func (T *subMessage) Response(username, message string, whisper bool) {
 		targetName := msg[strings.LastIndex(msg, " ")+1:]
 		emotes := strings.Join(T.cp.channel.Emotes, " ")
 		if T.cp.channel.BotIsSubbed {
-			T.cp.Say(fmt.Sprintf("@%s, Thank you for gifting a sub %s, welcome to the %s, %s %s", name, T.cp.channel.SubName, targetName, emotes))
+			T.cp.Say(fmt.Sprintf("@%s, Thank you for gifting a sub, welcome to the %s, %s! %s", name, T.cp.channel.SubName, targetName, emotes))
 		} else {
-			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for gifting a sub %s, welcome to the %s, %s %s", name, T.cp.channel.SubName, targetName, emotes))
+			T.cp.FancySay(fmt.Sprintf("@%s, Thank you for gifting a sub, welcome to the %s, %s! %s", name, T.cp.channel.SubName, targetName, emotes))
+		}
+	} else if strings.Index(msg, "an anonymous gifter gave ") > 0 {
+		leftover := strings.TrimPrefix(msg, "an anonymous gifter gave ")
+		targetName := leftover[:strings.Index(leftover, " ")]
+		emotes := strings.Join(T.cp.channel.Emotes, " ")
+		if T.cp.channel.BotIsSubbed {
+			T.cp.Say(fmt.Sprintf("Welcome to the %s, %s! %s", T.cp.channel.SubName, targetName, emotes))
+		} else {
+			T.cp.FancySay(fmt.Sprintf("Welcome to the %s, %s! %s", T.cp.channel.SubName, targetName, emotes))
 		}
 	} else if strings.Index(msg, "just subscribed") > 0 || strings.Index(msg, "twitch prime") > 0 {
 		name := msg[:strings.Index(msg, " ")]
