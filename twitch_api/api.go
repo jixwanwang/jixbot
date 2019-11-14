@@ -22,14 +22,14 @@ type emoticonsAPIResponse struct {
 }
 
 type EmotePlans struct {
-	Plan5  string `json:"$4.99"`
-	Plan10 string `json:"$9.99"`
-	Plan25 string `json:"$24.99"`
+	Plan5  int `json:"$4.99,string"`
+	Plan10 int `json:"$9.99,string"`
+	Plan25 int `json:"$24.99,string"`
 }
 
 type Emote struct {
 	Code        string `json:"code"`
-	EmoticonSet string `json:"emoticon_set,int"`
+	EmoticonSet int    `json:"emoticon_set"`
 }
 
 func makeRequest(method, url string) (*http.Response, error) {
@@ -43,13 +43,15 @@ func makeRequest(method, url string) (*http.Response, error) {
 }
 
 type userAPIResponse struct {
-	Data []struct {
-		ID string `json:"id"`
-	} `json:"data"`
+	Data []User `json:"data"`
+}
+
+type User struct {
+	ID string `json:"id"`
 }
 
 func getUserID(channel string) string {
-	resp, err := makeRequest("GET", "http://api.twitch.tv/helix/users?login="+channel)
+	resp, err := makeRequest("GET", "https://api.twitch.tv/helix/users?login="+channel)
 	if err != nil {
 		return ""
 	}
