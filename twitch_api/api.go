@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -18,13 +17,19 @@ func SetClientID(id string) {
 }
 
 type emoticonsAPIResponse struct {
-	Emoticons []Emote `"json:emoticons"`
+	Plans  EmotePlans `json:"plans"`
+	Emotes []Emote    `json:"emotes"`
+}
+
+type EmotePlans struct {
+	Plan5  string `json:"$4.99"`
+	Plan10 string `json:"$9.99"`
+	Plan25 string `json:"$24.99"`
 }
 
 type Emote struct {
-	Regex          string `json:"regex`
-	State          string `json:"state"`
-	SubscriberOnly bool   `json:"subscriber_only"`
+	Code        string `json:"code"`
+	EmoticonSet string `json:"emoticon_set,int"`
 }
 
 func makeRequest(method, url string) (*http.Response, error) {
@@ -37,8 +42,38 @@ func makeRequest(method, url string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
+type userAPIResponse struct {
+	Data []struct {
+		ID string `json:"id"`
+	} `json:"data"`
+}
+
+func getUserID(channel string) string {
+	resp, err := makeRequest("GET", "http://api.twitch.tv/helix/users?login="+channel)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var user userAPIResponse
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&user)
+	if err != nil {
+		log.Printf("failed to parse user %v", err)
+		return ""
+	}
+
+	if len(user.Data) == 0 {
+		return ""
+	}
+
+	return user.Data[0].ID
+}
+
 func GetEmotes(channel string) []string {
-	resp, err := makeRequest("GET", "http://api.twitch.tv/kraken/chat/"+channel+"/emoticons?on_site=1")
+	channelID := getUserID(channel)
+
+	resp, err := makeRequest("GET", "https://api.twitchemotes.com/api/v4/channels/"+channelID)
 	if err != nil {
 		return []string{}
 	}
@@ -53,9 +88,9 @@ func GetEmotes(channel string) []string {
 	}
 
 	subEmotes := []string{}
-	for _, e := range emotes.Emoticons {
-		if e.SubscriberOnly && strings.ToLower(e.State) == "active" {
-			subEmotes = append(subEmotes, e.Regex)
+	for _, e := range emotes.Emotes {
+		if e.EmoticonSet == emotes.Plans.Plan5 {
+			subEmotes = append(subEmotes, e.Code)
 		}
 	}
 
@@ -97,22 +132,22 @@ func GetIRCCluster(def string) string {
 	return m.Servers[rand.Intn(len(m.Servers))]
 }
 
-type KrakenStream struct {
-	Stream *Stream `json:"stream"`
+type HelixStream struct {
+	Data []Stream `json:"data"`
 }
 
 type Stream struct {
-	CreatedAt time.Time `json:"created_at"`
+	StartedAt time.Time `json:"started_at"`
 }
 
-func LiveStream(channel string) *KrakenStream {
-	resp, err := makeRequest("GET", "https://api.twitch.tv/kraken/streams/"+channel)
+func LiveStream(channel string) *HelixStream {
+	resp, err := makeRequest("GET", "https://api.twitch.tv/helix/streams?user_login="+channel)
 	if err != nil {
 		return nil
 	}
 	defer resp.Body.Close()
 
-	var s KrakenStream
+	var s HelixStream
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&s)
 
