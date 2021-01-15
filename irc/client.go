@@ -52,7 +52,7 @@ func New(server, channel, oauth, username string, messageRate int) *Client {
 
 func (C *Client) Reload() error {
 	conn, err := net.Dial("tcp", C.server)
-	br := bufio.NewReaderSize(conn, 512)
+	br := bufio.NewReaderSize(conn, 4096)
 	C.br = br
 	C.socket = conn
 	C.closed = false
