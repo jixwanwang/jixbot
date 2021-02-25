@@ -32,6 +32,7 @@ func NewPool() (*BotPool, error) {
 		return nil, fmt.Errorf("failed to get all channels: %v", err)
 	}
 	log.Printf("Channels being loaded: %v", channels)
+	channels = []string{"hotform"}
 
 	texter := messaging.NewTexter(config.TwilioAccount, config.TwilioSecret, config.TwilioNumber, config.JixNumber)
 	pasteBin := pastebin.NewClient(config.PastebinKey)

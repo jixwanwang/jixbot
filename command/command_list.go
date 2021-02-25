@@ -39,9 +39,18 @@ func (T *commandList) Response(username, message string, whisper bool) {
 			commands = fmt.Sprintf("%s\n%s\t| %s", commands, c.command, c.response)
 		}
 
+		tooManyCommands := false
+		if len(commands) > 100000 {
+			tooManyCommands = true
+			commands = commands[:100000]
+		}
 		paste := T.cp.pasteBin.Paste("Jixbot commands", commands, "1", "10M")
 		if len(paste) > 0 {
-			T.cp.Say(fmt.Sprintf("Current jixbot commands: %s", paste))
+			if tooManyCommands {
+				T.cp.Say(fmt.Sprintf("Current jixbot commands (truncated because there are too many): %s", paste))
+			} else {
+				T.cp.Say(fmt.Sprintf("Current jixbot commands: %s", paste))
+			}
 		}
 	}
 }

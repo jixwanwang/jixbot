@@ -144,6 +144,9 @@ func (C *CommandPool) specialCommands() []Command {
 		&lottery{
 			cp: C,
 		},
+		&emoteRate{
+			cp: C,
+		},
 	}
 }
 

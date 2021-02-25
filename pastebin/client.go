@@ -2,7 +2,6 @@ package pastebin
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -26,7 +25,11 @@ func (T *clientImpl) Paste(title, body, private, expire string) string {
 	u := url.Values{}
 	u.Set("api_option", "paste")
 	u.Set("api_dev_key", T.apiKey)
-	u.Set("api_paste_code", "hello!")
+	bodyTrimmed := body
+	if len(body) > 100000 {
+		bodyTrimmed = body[:100000]
+	}
+	u.Set("api_paste_code", bodyTrimmed)
 	u.Set("api_paste_name", title)
 	u.Set("api_paste_private", private)
 	u.Set("api_paste_expire_date", expire)
@@ -34,14 +37,12 @@ func (T *clientImpl) Paste(title, body, private, expire string) string {
 	hc := http.Client{}
 	req, err := http.NewRequest("POST", endpoint, strings.NewReader(u.Encode()))
 	if (err != nil) {
-		log.Printf("got an error creating post request: %v", err)
 		return ""
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res, err := hc.Do(req)
 	if err != nil {
-		log.Printf("error pasting: %s", err.Error())
 		return ""
 	}
 

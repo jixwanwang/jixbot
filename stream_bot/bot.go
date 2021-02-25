@@ -133,6 +133,9 @@ func (B *Bot) Start() {
 				} else {
 					B.processMessage(username, msg)
 				}
+				if len(e.Tags["emotes"]) > 0 {
+					B.processMessage(username, "PogChampPogChamp")
+				}
 			// Sub notification
 			case "USERNOTICE":
 				username := fromToUsername(e.From)
