@@ -3,6 +3,7 @@ package command
 import (
 	"time"
 	"fmt"
+	"strconv"
 
 	"github.com/jixwanwang/jixbot/channel"
 )
@@ -13,6 +14,8 @@ type emoteRate struct {
 	emotesPerMinute *subCommand
 	emoteRates map[int64]int
 }
+
+const MaxDuration = 300
 
 func (T *emoteRate) Init() {
 	T.countEmote = &subCommand{
@@ -49,10 +52,10 @@ func (T *emoteRate) Response(username, message string, whisper bool) {
 		} else {
 			T.emoteRates[now] = 1
 		}
-		if len(T.emoteRates) > 120 {
+		if len(T.emoteRates) > MaxDuration * 2 {
 			newEmoteRates := map[int64]int{}
 			for timestamp, count := range T.emoteRates{
-				if now - timestamp <= 60 {
+				if now - timestamp <= MaxDuration {
 					newEmoteRates[timestamp] = count
 				}
 			}
@@ -60,19 +63,30 @@ func (T *emoteRate) Response(username, message string, whisper bool) {
 		}
 	}
 	
-	_, err = T.emotesPerMinute.parse(message, clearance)
+	args, err := T.emotesPerMinute.parse(message, clearance)
 	if err == nil {
+		offset := 60
+		if len(args) > 0 {
+			minutes, ok := strconv.Atoi(args[0])
+			if ok == nil && (minutes <= MaxDuration) {
+				offset = minutes
+			}
+		}
 		now := time.Now().Unix()
 		emoteRate := 0
-		for i := 0; i < 60; i++ {
+		for i := 0; i < offset; i++ {
 			if count, ok := T.emoteRates[now - int64(i)]; ok {
 				emoteRate += count
 			}
 		}
+		durationString := "minute"
+		if offset != 60 {
+			durationString = fmt.Sprintf("%d seconds", offset)
+		}
 		if emoteRate < 5 {
-			T.cp.Say(fmt.Sprintf("Only %d emotes have been sent in the last minute. Stop slacking! SwiftRage", emoteRate)) 
+			T.cp.Say(fmt.Sprintf("Only %d emotes have been sent in the last %s. Stop slacking! SwiftRage", emoteRate, durationString)) 
 		} else {
-			T.cp.Say(fmt.Sprintf("%d emotes have been sent in the last minute!", emoteRate)) 
+			T.cp.Say(fmt.Sprintf("%d emotes have been sent in the last %s!", emoteRate, durationString)) 
 		}	
 	}
 }
