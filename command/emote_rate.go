@@ -25,7 +25,7 @@ func (T *emoteRate) Init() {
 		clearance: channel.VIEWER,
 	}
 	T.emotesPerMinute = &subCommand{
-		command: "!epm",
+		command: "!emotecheck",
 		numArgs: 0,
 		cooldown: 10 * time.Second,
 		clearance: channel.SUBSCRIBER,
