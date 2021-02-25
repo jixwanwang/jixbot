@@ -15,7 +15,7 @@ type emoteRate struct {
 	emoteRates map[int64]int
 }
 
-const MaxDuration = 300
+const MaxDuration = 60
 
 func (T *emoteRate) Init() {
 	T.countEmote = &subCommand{
@@ -46,7 +46,7 @@ func (T *emoteRate) Response(username, message string, whisper bool) {
 
 	_, err := T.countEmote.parse(message, clearance)
 	if err == nil {
-		now := time.Now().Unix()
+		now := time.Now().Unix() / int64(60)
 		if count, ok := T.emoteRates[now]; ok {
 			T.emoteRates[now] = count + 1
 		} else {
@@ -65,25 +65,22 @@ func (T *emoteRate) Response(username, message string, whisper bool) {
 	
 	args, err := T.emotesPerMinute.parse(message, clearance)
 	if err == nil {
-		offset := 60
+		offset := 10
 		if len(args) > 0 {
 			minutes, ok := strconv.Atoi(args[0])
-			if ok == nil && (minutes <= MaxDuration) {
+			if ok == nil && (minutes <= MaxDuration) && (minutes > 0) {
 				offset = minutes
 			}
 		}
-		now := time.Now().Unix()
+		now := time.Now().Unix() / int64(60)
 		emoteRate := 0
 		for i := 0; i < offset; i++ {
 			if count, ok := T.emoteRates[now - int64(i)]; ok {
 				emoteRate += count
 			}
 		}
-		durationString := "minute"
-		if offset != 60 {
-			durationString = fmt.Sprintf("%d seconds", offset)
-		}
-		if emoteRate < 5 {
+		durationString := fmt.Sprintf("%d minutes", offset)
+		if emoteRate < offset {
 			T.cp.Say(fmt.Sprintf("Only %d emotes have been sent in the last %s. Stop slacking! SwiftRage", emoteRate, durationString)) 
 		} else {
 			T.cp.Say(fmt.Sprintf("%d emotes have been sent in the last %s!", emoteRate, durationString)) 
