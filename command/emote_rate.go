@@ -65,10 +65,10 @@ func (T *emoteRate) Response(username, message string, whisper bool) {
 	
 	args, err := T.emotesPerMinute.parse(message, clearance)
 	if err == nil {
-		offset := 10
+		offset := 30
 		if len(args) > 0 {
 			minutes, ok := strconv.Atoi(args[0])
-			if ok == nil && (minutes <= MaxDuration) && (minutes > 0) {
+			if ok == nil && (minutes <= MaxDuration) && (minutes > 1) {
 				offset = minutes
 			}
 		}
